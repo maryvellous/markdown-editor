@@ -25,7 +25,12 @@ La UI è volutamente spartana. I tre modi di lavoro sono:
 - **Affianca**: editor e anteprima;
 - **Leggi**: solo anteprima.
 
-Sul bordo sinistro c’è una piccola rail con due strumenti distinti:\n\n- **Recenti**: apre un pannello dedicato che contiene solo la cronologia degli ultimi file;\n- **Guida**: apre un pannello separato con le sintassi Markdown cliccabili.\n\nI due pannelli sono mutuamente esclusivi e possono essere richiusi ricliccando lo strumento attivo.
+Sul bordo sinistro c’è una piccola rail con due strumenti distinti:
+
+- **Recenti**: apre un pannello dedicato che contiene solo la cronologia degli ultimi file;
+- **Guida**: apre un pannello separato con le sintassi Markdown cliccabili.
+
+I due pannelli sono mutuamente esclusivi e possono essere richiusi ricliccando lo strumento attivo.
 
 Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitizzato prima di essere mostrato. In modalità **Scrivi**, quando l'anteprima non è visibile, il renderer non viene invocato a ogni battuta: questo riduce ulteriormente il lavoro su CPU meno recenti.
 
