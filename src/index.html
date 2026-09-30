@@ -9,6 +9,18 @@
 </head>
 <body>
   <div class="app-shell">
+    <div id="windowTitlebar" class="window-titlebar" data-tauri-drag-region>
+      <div class="window-title" data-tauri-drag-region>
+        <span class="window-title-dot" aria-hidden="true"></span>
+        <span data-tauri-drag-region>Diaspro Markdown</span>
+      </div>
+      <div class="window-controls" aria-label="Controlli finestra">
+        <button id="windowMinimizeBtn" class="window-control" type="button" aria-label="Riduci a icona" title="Riduci a icona">−</button>
+        <button id="windowMaximizeBtn" class="window-control" type="button" aria-label="Massimizza" title="Massimizza">□</button>
+        <button id="windowCloseBtn" class="window-control window-control-close" type="button" aria-label="Chiudi" title="Chiudi">×</button>
+      </div>
+    </div>
+
     <header class="topbar">
       <div class="brand-block">
         <div class="brand-mark" aria-hidden="true">

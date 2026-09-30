@@ -38,8 +38,81 @@ button { -webkit-tap-highlight-color: transparent; }
 .app-shell {
   height: 100vh;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: 36px auto auto minmax(0, 1fr) auto;
   background: var(--canvas);
+}
+
+.window-titlebar {
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(157, 133, 198, 0.18);
+  background: #24173c;
+  user-select: none;
+}
+
+.window-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 13px;
+  color: rgba(255, 255, 255, 0.82);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+}
+
+.window-title-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--plum);
+  box-shadow:
+    9px -3px 0 -1px var(--sand),
+    13px 3px 0 -2px var(--blue);
+  margin-right: 10px;
+}
+
+.window-controls {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+.window-control {
+  width: 46px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid rgba(157, 133, 198, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  background: transparent;
+  cursor: pointer;
+  font-family: "Segoe UI Symbol", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.window-control:hover {
+  color: var(--white);
+  background: rgba(157, 133, 198, 0.13);
+}
+
+.window-control-close:hover {
+  background: var(--terracotta);
+  color: var(--white);
+}
+
+.window-control:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: -3px;
 }
 
 .topbar {

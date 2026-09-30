@@ -2,6 +2,8 @@
   'use strict';
 
   const invoke = window.__TAURI__?.core?.invoke;
+  const tauriWindow = window.__TAURI__?.window;
+  const appWindow = tauriWindow?.getCurrentWindow ? tauriWindow.getCurrentWindow() : null;
   const RECENTS_KEY = 'diaspro-markdown.recents.v1';
   const ACTIVE_PANEL_KEY = 'diaspro-markdown.active-panel.v2';
   const MAX_RECENTS = 8;
@@ -59,6 +61,26 @@
     { label: 'A capo forzato', syntax: '2 spazi + Invio', type: 'snippet', value: '  \n' },
     { label: 'Escape', syntax: '\\*testo\\*', type: 'snippet', value: '\\*testo\\*', selectText: 'testo' },
   ];
+
+  function setupWindowControls() {
+    const minimizeBtn = document.getElementById('windowMinimizeBtn');
+    const maximizeBtn = document.getElementById('windowMaximizeBtn');
+    const closeBtn = document.getElementById('windowCloseBtn');
+    const titlebar = document.getElementById('windowTitlebar');
+
+    if (!appWindow || !minimizeBtn || !maximizeBtn || !closeBtn || !titlebar) return;
+
+    minimizeBtn.addEventListener('click', () => appWindow.minimize());
+    maximizeBtn.addEventListener('click', () => appWindow.toggleMaximize());
+    closeBtn.addEventListener('click', () => {
+      if (confirmDiscardIfNeeded()) appWindow.close();
+    });
+
+    titlebar.addEventListener('dblclick', (event) => {
+      if (event.target.closest('.window-controls')) return;
+      appWindow.toggleMaximize();
+    });
+  }
 
   function requireTauri() {
     if (!invoke) {
@@ -487,5 +509,6 @@
     showToast('Link: ' + (link.getAttribute('href') || ''));
   });
 
+  setupWindowControls();
   loadStartupDocument();
 })();

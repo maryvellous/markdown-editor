@@ -67,10 +67,10 @@ jobs:
           $notes = @"
           ## Diaspro Markdown $version
 
-          - nuova rail laterale dedicata agli strumenti;
-          - pannello Recenti separato, con solo la lista degli ultimi file aperti;
-          - pannello Guida separato, con sintassi Markdown cliccabili;
-          - toolbar superiore ripulita e riservata alle azioni del documento.
+          - titlebar Windows personalizzata in stile Diaspro;
+          - controlli minimizza, massimizza e chiudi integrati nella UI;
+          - doppio clic sulla barra per massimizzare o ripristinare;
+          - la chiusura dalla titlebar rispetta le modifiche non salvate.
           "@
 
           $null = gh release view $tag 2>$null
