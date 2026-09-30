@@ -27,7 +27,6 @@
       </div>
 
       <nav class="actions" aria-label="Azioni documento">
-        <button id="sideToggleBtn" class="button button-quiet" type="button" title="Mostra o nascondi strumenti">Nascondi guida</button>
         <button id="newBtn" class="button button-quiet" type="button" title="Nuovo (Ctrl+N)">Nuovo</button>
         <button id="openBtn" class="button button-quiet" type="button" title="Apri (Ctrl+O)">Apri</button>
         <button id="saveAsBtn" class="button button-quiet" type="button" title="Salva con nome (Ctrl+Shift+S)">Salva con nome</button>
@@ -41,35 +40,67 @@
         <button class="mode-button is-active" type="button" data-mode="split">Affianca</button>
         <button class="mode-button" type="button" data-mode="preview">Leggi</button>
       </div>
-      <span class="shortcut-hint">Ctrl+S salva · Ctrl+O apre · clicca una sintassi per inserirla</span>
+      <span class="shortcut-hint">Ctrl+S salva · Ctrl+O apre</span>
     </div>
 
     <div id="contentRow" class="content-row">
-      <aside id="sidePanel" class="side-panel" aria-label="Strumenti Markdown">
-        <div class="side-panel-head">
-          <div>
-            <span class="side-kicker">STRUMENTI</span>
-            <h2>Guida rapida</h2>
-          </div>
-          <button id="closeSideBtn" class="icon-button" type="button" aria-label="Nascondi guida" title="Nascondi guida">×</button>
-        </div>
+      <nav class="tool-rail" aria-label="Pannelli laterali">
+        <button
+          id="recentPanelBtn"
+          class="rail-button"
+          type="button"
+          data-panel="recent"
+          aria-controls="sidePanel"
+          aria-pressed="false"
+          title="File recenti"
+        >
+          <span class="rail-glyph rail-glyph-recent" aria-hidden="true">◷</span>
+          <span class="rail-label">Recenti</span>
+        </button>
 
-        <section class="side-section recent-section" aria-labelledby="recentTitle">
-          <div class="side-section-head">
-            <h3 id="recentTitle">Recenti</h3>
+        <button
+          id="guidePanelBtn"
+          class="rail-button"
+          type="button"
+          data-panel="guide"
+          aria-controls="sidePanel"
+          aria-pressed="false"
+          title="Guida rapida Markdown"
+        >
+          <span class="rail-glyph rail-glyph-guide" aria-hidden="true">#</span>
+          <span class="rail-label">Guida</span>
+        </button>
+      </nav>
+
+      <aside id="sidePanel" class="side-panel" aria-label="Pannello laterale" aria-hidden="true">
+        <section id="recentPanel" class="tool-panel" data-tool-panel="recent" hidden>
+          <div class="side-panel-head">
+            <div>
+              <span class="side-kicker">FILE</span>
+              <h2>Recenti</h2>
+            </div>
+            <button class="icon-button close-panel-btn" type="button" aria-label="Chiudi pannello" title="Chiudi">×</button>
+          </div>
+
+          <div class="panel-toolbar">
+            <span class="panel-caption">Ultimi file aperti</span>
             <button id="clearRecentBtn" class="text-button" type="button">Pulisci</button>
           </div>
+
           <div id="recentList" class="recent-list"></div>
-          <p id="recentEmpty" class="side-empty">I file che apri compariranno qui.</p>
+          <p id="recentEmpty" class="side-empty">Nessun file recente.</p>
         </section>
 
-        <section class="side-section guide-section" aria-labelledby="guideTitle">
-          <div class="side-section-head guide-heading">
+        <section id="guidePanel" class="tool-panel" data-tool-panel="guide" hidden>
+          <div class="side-panel-head">
             <div>
-              <h3 id="guideTitle">Sintassi Markdown</h3>
-              <p>Clicca una voce per inserirla nel testo.</p>
+              <span class="side-kicker">MARKDOWN</span>
+              <h2>Guida rapida</h2>
             </div>
+            <button class="icon-button close-panel-btn" type="button" aria-label="Chiudi pannello" title="Chiudi">×</button>
           </div>
+
+          <p class="guide-intro">Clicca una sintassi per inserirla nel punto in cui stai scrivendo.</p>
           <div id="markdownGuide" class="markdown-guide"></div>
         </section>
       </aside>

@@ -3,7 +3,7 @@
 
   const invoke = window.__TAURI__?.core?.invoke;
   const RECENTS_KEY = 'diaspro-markdown.recents.v1';
-  const SIDEBAR_KEY = 'diaspro-markdown.sidebar-open.v1';
+  const ACTIVE_PANEL_KEY = 'diaspro-markdown.active-panel.v2';
   const MAX_RECENTS = 8;
   const TICK = String.fromCharCode(96);
   const FENCE = TICK.repeat(3);
@@ -12,8 +12,9 @@
   const preview = document.getElementById('preview');
   const workspace = document.getElementById('workspace');
   const contentRow = document.getElementById('contentRow');
-  const sideToggleBtn = document.getElementById('sideToggleBtn');
-  const closeSideBtn = document.getElementById('closeSideBtn');
+  const sidePanel = document.getElementById('sidePanel');
+  const recentPanelBtn = document.getElementById('recentPanelBtn');
+  const guidePanelBtn = document.getElementById('guidePanelBtn');
   const recentList = document.getElementById('recentList');
   const recentEmpty = document.getElementById('recentEmpty');
   const clearRecentBtn = document.getElementById('clearRecentBtn');
@@ -31,7 +32,7 @@
     name: 'Senza titolo.md',
     savedContent: '',
     mode: 'split',
-    sidebarOpen: readStoredSidebarState(),
+    activePanel: readStoredPanelState(),
     renderVersion: 0,
     renderTimer: null,
     previewDirty: true,
@@ -240,25 +241,42 @@
     if (mode !== 'preview') editor.focus();
   }
 
-  function readStoredSidebarState() {
+  function readStoredPanelState() {
     try {
-      return window.localStorage.getItem(SIDEBAR_KEY) !== '0';
+      const value = window.localStorage.getItem(ACTIVE_PANEL_KEY);
+      return ['recent', 'guide'].includes(value) ? value : null;
     } catch {
-      return true;
+      return null;
     }
   }
 
-  function setSidebarOpen(open) {
-    state.sidebarOpen = Boolean(open);
-    contentRow.classList.toggle('sidebar-closed', !state.sidebarOpen);
-    sideToggleBtn.textContent = state.sidebarOpen ? 'Nascondi guida' : 'Guida';
-    sideToggleBtn.setAttribute('aria-pressed', state.sidebarOpen ? 'true' : 'false');
+  function setActivePanel(panel) {
+    const nextPanel = ['recent', 'guide'].includes(panel) ? panel : null;
+    state.activePanel = nextPanel;
+
+    contentRow.classList.toggle('panel-open', Boolean(nextPanel));
+    sidePanel.setAttribute('aria-hidden', nextPanel ? 'false' : 'true');
+
+    [recentPanelBtn, guidePanelBtn].forEach((button) => {
+      const active = button.dataset.panel === nextPanel;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('[data-tool-panel]').forEach((panelElement) => {
+      panelElement.hidden = panelElement.dataset.toolPanel !== nextPanel;
+    });
 
     try {
-      window.localStorage.setItem(SIDEBAR_KEY, state.sidebarOpen ? '1' : '0');
+      if (nextPanel) window.localStorage.setItem(ACTIVE_PANEL_KEY, nextPanel);
+      else window.localStorage.removeItem(ACTIVE_PANEL_KEY);
     } catch {
-      // Lo storage non è essenziale per il funzionamento della UI.
+      // Lo stato del pannello non è essenziale al funzionamento.
     }
+  }
+
+  function togglePanel(panel) {
+    setActivePanel(state.activePanel === panel ? null : panel);
   }
 
   function getRecents() {
@@ -401,7 +419,7 @@
   async function loadStartupDocument() {
     renderGuide();
     renderRecents();
-    setSidebarOpen(state.sidebarOpen);
+    setActivePanel(state.activePanel);
 
     if (!requireTauri()) {
       refreshPreview();
@@ -433,8 +451,12 @@
   document.getElementById('openBtn').addEventListener('click', openDocument);
   document.getElementById('saveBtn').addEventListener('click', saveDocument);
   document.getElementById('saveAsBtn').addEventListener('click', saveAs);
-  sideToggleBtn.addEventListener('click', () => setSidebarOpen(!state.sidebarOpen));
-  closeSideBtn.addEventListener('click', () => setSidebarOpen(false));
+
+  recentPanelBtn.addEventListener('click', () => togglePanel('recent'));
+  guidePanelBtn.addEventListener('click', () => togglePanel('guide'));
+  document.querySelectorAll('.close-panel-btn').forEach((button) => {
+    button.addEventListener('click', () => setActivePanel(null));
+  });
   clearRecentBtn.addEventListener('click', () => storeRecents([]));
 
   document.querySelectorAll('.mode-button').forEach((button) => {
