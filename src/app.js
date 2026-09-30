@@ -349,7 +349,7 @@
   }
 
   function insertGuideItem(item) {
-    setMode('edit');
+    if (state.mode === 'preview') setMode('split');
     editor.focus();
 
     const start = editor.selectionStart;
