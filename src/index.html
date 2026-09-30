@@ -27,6 +27,7 @@
       </div>
 
       <nav class="actions" aria-label="Azioni documento">
+        <button id="sideToggleBtn" class="button button-quiet" type="button" title="Mostra o nascondi strumenti">Nascondi guida</button>
         <button id="newBtn" class="button button-quiet" type="button" title="Nuovo (Ctrl+N)">Nuovo</button>
         <button id="openBtn" class="button button-quiet" type="button" title="Apri (Ctrl+O)">Apri</button>
         <button id="saveAsBtn" class="button button-quiet" type="button" title="Salva con nome (Ctrl+Shift+S)">Salva con nome</button>
@@ -40,33 +41,64 @@
         <button class="mode-button is-active" type="button" data-mode="split">Affianca</button>
         <button class="mode-button" type="button" data-mode="preview">Leggi</button>
       </div>
-      <span class="shortcut-hint">Ctrl+S salva · Ctrl+O apre</span>
+      <span class="shortcut-hint">Ctrl+S salva · Ctrl+O apre · clicca una sintassi per inserirla</span>
     </div>
 
-    <main id="workspace" class="workspace mode-split">
-      <section id="editorPane" class="pane editor-pane" aria-label="Editor Markdown">
-        <div class="pane-label">MARKDOWN</div>
-        <textarea
-          id="editor"
-          class="editor"
-          spellcheck="true"
-          autocomplete="off"
-          autocapitalize="sentences"
-          placeholder="# Titolo\n\nInizia a scrivere..."
-          aria-label="Contenuto Markdown"
-        ></textarea>
-      </section>
-
-      <section id="previewPane" class="pane preview-pane" aria-label="Anteprima Markdown">
-        <div class="pane-label">ANTEPRIMA</div>
-        <article id="preview" class="markdown-body">
-          <div class="empty-preview">
-            <div class="empty-mark">m</div>
-            <p>L'anteprima comparirà qui mentre scrivi.</p>
+    <div id="contentRow" class="content-row">
+      <aside id="sidePanel" class="side-panel" aria-label="Strumenti Markdown">
+        <div class="side-panel-head">
+          <div>
+            <span class="side-kicker">STRUMENTI</span>
+            <h2>Guida rapida</h2>
           </div>
-        </article>
-      </section>
-    </main>
+          <button id="closeSideBtn" class="icon-button" type="button" aria-label="Nascondi guida" title="Nascondi guida">×</button>
+        </div>
+
+        <section class="side-section recent-section" aria-labelledby="recentTitle">
+          <div class="side-section-head">
+            <h3 id="recentTitle">Recenti</h3>
+            <button id="clearRecentBtn" class="text-button" type="button">Pulisci</button>
+          </div>
+          <div id="recentList" class="recent-list"></div>
+          <p id="recentEmpty" class="side-empty">I file che apri compariranno qui.</p>
+        </section>
+
+        <section class="side-section guide-section" aria-labelledby="guideTitle">
+          <div class="side-section-head guide-heading">
+            <div>
+              <h3 id="guideTitle">Sintassi Markdown</h3>
+              <p>Clicca una voce per inserirla nel testo.</p>
+            </div>
+          </div>
+          <div id="markdownGuide" class="markdown-guide"></div>
+        </section>
+      </aside>
+
+      <main id="workspace" class="workspace mode-split">
+        <section id="editorPane" class="pane editor-pane" aria-label="Editor Markdown">
+          <div class="pane-label">MARKDOWN</div>
+          <textarea
+            id="editor"
+            class="editor"
+            spellcheck="true"
+            autocomplete="off"
+            autocapitalize="sentences"
+            placeholder="# Titolo\n\nInizia a scrivere..."
+            aria-label="Contenuto Markdown"
+          ></textarea>
+        </section>
+
+        <section id="previewPane" class="pane preview-pane" aria-label="Anteprima Markdown">
+          <div class="pane-label">ANTEPRIMA</div>
+          <article id="preview" class="markdown-body">
+            <div class="empty-preview">
+              <div class="empty-mark">m</div>
+              <p>L'anteprima comparirà qui mentre scrivi.</p>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
 
     <footer class="statusbar">
       <div class="status-left">
