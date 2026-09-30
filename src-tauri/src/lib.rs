@@ -22,7 +22,7 @@ fn document_from_path(path: &Path) -> Result<DocumentPayload, String> {
     let mut content = String::from_utf8(bytes)
         .map_err(|_| "Il file non è UTF-8 e non può essere aperto come Markdown.".to_string())?;
 
-    if content.starts_with('﻿') {
+    if content.starts_with('\u{feff}') {
         content.remove(0);
     }
 
@@ -50,6 +50,11 @@ fn open_document() -> Result<Option<DocumentPayload>, String> {
     };
 
     document_from_path(&path).map(Some)
+}
+
+#[tauri::command]
+fn open_document_path(path: String) -> Result<DocumentPayload, String> {
+    document_from_path(Path::new(&path))
 }
 
 #[tauri::command]
@@ -117,6 +122,7 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             open_document,
+            open_document_path,
             startup_document,
             save_document,
             save_document_as,
