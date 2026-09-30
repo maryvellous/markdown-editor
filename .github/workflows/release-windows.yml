@@ -67,10 +67,10 @@ jobs:
           $notes = @"
           ## Diaspro Markdown $version
 
-          - contrasto del testo aumentato mantenendo la palette Diaspro;
-          - guida rapida Markdown laterale con sintassi cliccabili;
-          - elenco degli ultimi file aperti;
-          - rendering dell'anteprima alleggerito in modalità Scrivi.
+          - nuova rail laterale dedicata agli strumenti;
+          - pannello Recenti separato, con solo la lista degli ultimi file aperti;
+          - pannello Guida separato, con sintassi Markdown cliccabili;
+          - toolbar superiore ripulita e riservata alle azioni del documento.
           "@
 
           $null = gh release view $tag 2>$null
