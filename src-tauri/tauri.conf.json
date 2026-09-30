@@ -1,0 +1,59 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Diaspro Markdown",
+  "version": "0.1.0",
+  "identifier": "dev.diaspro.markdown",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "Diaspro Markdown",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 720,
+        "minHeight": 500,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "category": "Utility",
+    "publisher": "Diaspro",
+    "shortDescription": "Editor Markdown desktop leggero in stile Diaspro.",
+    "longDescription": "Editor Markdown essenziale per creare, leggere e modificare file .md con anteprima affiancata.",
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown"],
+        "name": "Documento Markdown",
+        "description": "Documento Markdown",
+        "mimeType": "text/markdown",
+        "role": "Editor",
+        "rank": "Owner"
+      }
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Italian", "English"],
+        "installerHooks": "./windows/hooks.nsh"
+      }
+    }
+  }
+}

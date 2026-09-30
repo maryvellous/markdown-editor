@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Diaspro Markdown</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="brand-letter">m</span>
+          <i class="bubble bubble-sand"></i>
+          <i class="bubble bubble-blue"></i>
+          <i class="bubble bubble-sage"></i>
+        </div>
+        <div class="document-meta">
+          <div class="document-line">
+            <span id="dirtyDot" class="dirty-dot" aria-hidden="true"></span>
+            <strong id="fileName">Senza titolo.md</strong>
+          </div>
+          <span id="filePath" class="file-path">Nuovo documento</span>
+        </div>
+      </div>
+
+      <nav class="actions" aria-label="Azioni documento">
+        <button id="newBtn" class="button button-quiet" type="button" title="Nuovo (Ctrl+N)">Nuovo</button>
+        <button id="openBtn" class="button button-quiet" type="button" title="Apri (Ctrl+O)">Apri</button>
+        <button id="saveAsBtn" class="button button-quiet" type="button" title="Salva con nome (Ctrl+Shift+S)">Salva con nome</button>
+        <button id="saveBtn" class="button button-primary" type="button" title="Salva (Ctrl+S)">Salva</button>
+      </nav>
+    </header>
+
+    <div class="viewbar">
+      <div class="mode-switch" role="group" aria-label="Modalità di visualizzazione">
+        <button class="mode-button" type="button" data-mode="edit">Scrivi</button>
+        <button class="mode-button is-active" type="button" data-mode="split">Affianca</button>
+        <button class="mode-button" type="button" data-mode="preview">Leggi</button>
+      </div>
+      <span class="shortcut-hint">Ctrl+S salva · Ctrl+O apre</span>
+    </div>
+
+    <main id="workspace" class="workspace mode-split">
+      <section id="editorPane" class="pane editor-pane" aria-label="Editor Markdown">
+        <div class="pane-label">MARKDOWN</div>
+        <textarea
+          id="editor"
+          class="editor"
+          spellcheck="true"
+          autocomplete="off"
+          autocapitalize="sentences"
+          placeholder="# Titolo\n\nInizia a scrivere..."
+          aria-label="Contenuto Markdown"
+        ></textarea>
+      </section>
+
+      <section id="previewPane" class="pane preview-pane" aria-label="Anteprima Markdown">
+        <div class="pane-label">ANTEPRIMA</div>
+        <article id="preview" class="markdown-body">
+          <div class="empty-preview">
+            <div class="empty-mark">m</div>
+            <p>L'anteprima comparirà qui mentre scrivi.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <div class="status-left">
+        <span id="saveState" class="status-pill status-saved">Salvato</span>
+        <span id="encodingState">UTF-8</span>
+      </div>
+      <div class="status-right">
+        <span id="wordCount">0 parole</span>
+        <span class="status-separator">•</span>
+        <span id="charCount">0 caratteri</span>
+      </div>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
