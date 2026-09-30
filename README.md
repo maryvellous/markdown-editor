@@ -8,6 +8,9 @@ Piccolo editor desktop per file Markdown, pensato per essere rapido da aprire e 
 - modifica Markdown in un editor essenziale con conteggio parole e caratteri;
 - mostra l'anteprima Markdown in tempo reale, anche affiancata all'editor;
 - crea nuovi documenti e usa **Salva** / **Salva con nome**;
+- mantiene un elenco degli **8 file aperti più di recente**, riapribili con un click;
+- include una **guida rapida Markdown laterale** con le sintassi comuni cliccabili per inserirle nell'editor;
+- permette di nascondere la barra laterale senza perdere la preferenza;
 - supporta `Ctrl+N`, `Ctrl+O`, `Ctrl+S` e `Ctrl+Shift+S`;
 - registra Diaspro Markdown come applicazione per i file Markdown;
 - aggiunge **Documento Markdown** al menu di Windows **Nuovo** tramite `ShellNew`;
@@ -22,13 +25,27 @@ La UI è volutamente spartana. I tre modi di lavoro sono:
 - **Affianca**: editor e anteprima;
 - **Leggi**: solo anteprima.
 
-Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitizzato prima di essere mostrato.
+La barra laterale raccoglie i file recenti e una guida alle sintassi Markdown: titoli, grassetto, corsivo, barrato, codice, citazioni, liste, checkbox, link, immagini, separatori, tabelle, note a piè pagina, a-capo forzato ed escape.
+
+Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitizzato prima di essere mostrato. In modalità **Scrivi**, quando l'anteprima non è visibile, il renderer non viene invocato a ogni battuta: questo riduce ulteriormente il lavoro su CPU meno recenti.
+
+## File recenti
+
+La cronologia contiene al massimo 8 percorsi ed è salvata localmente nel WebView tramite `localStorage`. Non viene usato alcun database.
+
+Se un file recente è stato spostato o eliminato, al tentativo di apertura viene rimosso automaticamente dall'elenco.
 
 ## Integrazione Windows
 
 Il bundle NSIS dichiara l'associazione ai file `.md` e `.markdown`. L'hook dell'installer aggiunge inoltre `ShellNew` per `.md`, così **tasto destro → Nuovo → Documento Markdown** crea il file e Windows può passarlo direttamente a Diaspro Markdown.
 
 Windows può richiedere una scelta esplicita dell'utente per cambiare l'app predefinita se `.md` è già associato a un altro programma. In quel caso basta usare una volta **Apri con → Diaspro Markdown → Sempre**.
+
+## Leggerezza
+
+L'app usa Tauri 2, un frontend HTML/CSS/JavaScript senza framework e il WebView di sistema. Non incorpora una copia completa di Chromium come farebbe una tipica app Electron.
+
+L'obiettivo è funzionare bene anche su hardware non recente. Il requisito pratico più importante è il sistema operativo: su Windows serve un ambiente compatibile con WebView2. La potenza della macchina incide molto meno di quanto inciderebbe in un'app Electron.
 
 ## Sviluppo
 
@@ -39,8 +56,6 @@ npm install
 npm run icons
 npm run dev
 ```
-
-L'app usa un frontend HTML/CSS/JavaScript senza framework e Tauri 2 per il contenitore desktop.
 
 ## Build Windows
 
