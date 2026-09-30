@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220">
+  <rect x="26" y="26" width="168" height="168" rx="28" fill="#7A3F67"/>
+  <g transform="rotate(-7 96 112)">
+    <text x="56" y="149" font-family="Outfit, Arial, sans-serif" font-size="116" font-weight="700" fill="#FFFFFF">d</text>
+  </g>
+  <circle cx="144" cy="86" r="13" fill="#FFFFFF"/>
+  <circle cx="162" cy="68" r="8" fill="#FFFFFF"/>
+  <circle cx="151" cy="51" r="5" fill="#FFFFFF"/>
+</svg>
