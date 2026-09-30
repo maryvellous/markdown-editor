@@ -10,7 +10,7 @@ Piccolo editor desktop per file Markdown, pensato per essere rapido da aprire e 
 - crea nuovi documenti e usa **Salva** / **Salva con nome**;
 - mantiene un elenco degli **8 file aperti più di recente**, riapribili con un click;
 - include una **guida rapida Markdown laterale** con le sintassi comuni cliccabili per inserirle nell'editor;
-- permette di nascondere la barra laterale senza perdere la preferenza;
+- separa **Recenti** e **Guida** in due pannelli indipendenti richiamabili dalla rail laterale;
 - supporta `Ctrl+N`, `Ctrl+O`, `Ctrl+S` e `Ctrl+Shift+S`;
 - registra Diaspro Markdown come applicazione per i file Markdown;
 - aggiunge **Documento Markdown** al menu di Windows **Nuovo** tramite `ShellNew`;
@@ -25,7 +25,7 @@ La UI è volutamente spartana. I tre modi di lavoro sono:
 - **Affianca**: editor e anteprima;
 - **Leggi**: solo anteprima.
 
-La barra laterale raccoglie i file recenti e una guida alle sintassi Markdown: titoli, grassetto, corsivo, barrato, codice, citazioni, liste, checkbox, link, immagini, separatori, tabelle, note a piè pagina, a-capo forzato ed escape.
+Sul bordo sinistro c’è una piccola rail con due strumenti distinti:\n\n- **Recenti**: apre un pannello dedicato che contiene solo la cronologia degli ultimi file;\n- **Guida**: apre un pannello separato con le sintassi Markdown cliccabili.\n\nI due pannelli sono mutuamente esclusivi e possono essere richiusi ricliccando lo strumento attivo.
 
 Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitizzato prima di essere mostrato. In modalità **Scrivi**, quando l'anteprima non è visibile, il renderer non viene invocato a ogni battuta: questo riduce ulteriormente il lavoro su CPU meno recenti.
 
