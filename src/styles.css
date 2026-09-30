@@ -10,7 +10,7 @@
   --blue: #a5c4dc;
   --sage: #98a78a;
   --white: #ffffff;
-  --muted: rgba(255, 255, 255, 0.58);
+  --muted: rgba(255, 255, 255, 0.76);
   --line: rgba(157, 133, 198, 0.24);
   --font-heading: Outfit, "Segoe UI", system-ui, sans-serif;
   --font-body: Inter, "Segoe UI", system-ui, sans-serif;
@@ -144,7 +144,7 @@ button { -webkit-tap-highlight-color: transparent; }
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--blue);
-  opacity: 0.72;
+  opacity: 0.9;
   font-family: var(--font-mono);
   font-size: 10px;
 }
@@ -195,7 +195,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .button-quiet {
   border-color: rgba(157, 133, 198, 0.26);
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .button-quiet:hover {
@@ -245,7 +245,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .shortcut-hint {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(255, 255, 255, 0.66);
   font-family: var(--font-mono);
   font-size: 10px;
 }
@@ -284,7 +284,7 @@ button { -webkit-tap-highlight-color: transparent; }
   z-index: 2;
   top: 10px;
   right: 14px;
-  color: rgba(165, 196, 220, 0.48);
+  color: rgba(165, 196, 220, 0.74);
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 800;
@@ -309,14 +309,14 @@ button { -webkit-tap-highlight-color: transparent; }
   tab-size: 2;
 }
 
-.editor::placeholder { color: rgba(255, 255, 255, 0.24); }
+.editor::placeholder { color: rgba(255, 255, 255, 0.5); }
 
 .preview-pane {
   background: #f4ecd9;
   border-color: rgba(232, 209, 158, 0.34);
 }
 
-.preview-pane .pane-label { color: rgba(30, 19, 51, 0.36); }
+.preview-pane .pane-label { color: rgba(30, 19, 51, 0.62); }
 
 .markdown-body {
   height: 100%;
@@ -436,7 +436,7 @@ button { -webkit-tap-highlight-color: transparent; }
   place-content: center;
   justify-items: center;
   gap: 10px;
-  color: rgba(30, 19, 51, 0.46);
+  color: rgba(30, 19, 51, 0.68);
   text-align: center;
 }
 
@@ -465,7 +465,7 @@ button { -webkit-tap-highlight-color: transparent; }
   padding: 6px 18px;
   border-top: 1px solid var(--line);
   background: rgba(43, 28, 71, 0.82);
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.68);
   font-family: var(--font-mono);
   font-size: 10px;
 }
@@ -645,7 +645,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .side-kicker {
-  color: rgba(165, 196, 220, 0.55);
+  color: rgba(165, 196, 220, 0.82);
   font-family: var(--font-mono);
   font-size: 8px;
   font-weight: 800;
@@ -655,7 +655,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .icon-button,
 .text-button {
   border: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.72);
   background: transparent;
   cursor: pointer;
 }
@@ -699,14 +699,14 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .guide-heading p {
   margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.37);
+  color: rgba(255, 255, 255, 0.88);
   font-size: 10px;
   line-height: 1.4;
 }
 
 .side-empty {
   margin: 9px 2px 2px;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.62);
   font-size: 10px;
   line-height: 1.45;
 }
@@ -746,7 +746,7 @@ button { -webkit-tap-highlight-color: transparent; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.94);
   font-size: 11px;
   font-weight: 700;
 }
@@ -755,7 +755,7 @@ button { -webkit-tap-highlight-color: transparent; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(165, 196, 220, 0.42);
+  color: rgba(165, 196, 220, 0.76);
   font-family: var(--font-mono);
   font-size: 8px;
 }
