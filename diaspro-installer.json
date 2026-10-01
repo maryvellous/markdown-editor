@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "Diaspro Markdown",
+    "version": "0.3.1",
+    "publisher": "Diaspro",
+    "publisherUrl": "https://studiodiaspro.com",
+    "appId": "dev.diaspro.markdown",
+    "description": "Editor Markdown desktop leggero in stile Diaspro",
+    "sourceDir": ".release-payload",
+    "executable": "Diaspro Markdown.exe",
+    "icon": "src-tauri/icons/icon.ico",
+    "fileAssociations": [
+      {
+        "extensions": ["md", "markdown"],
+        "name": "Documento Markdown",
+        "description": "Documento Markdown",
+        "progId": "dev.diaspro.markdown.document"
+      }
+    ]
+  },
+  "installer": {
+    "architecture": "x64",
+    "installScope": "currentUser",
+    "allowScopeChoice": false,
+    "desktopShortcut": true,
+    "startMenuShortcut": true,
+    "launchAfterInstall": true,
+    "outputDir": "dist-installer",
+    "outputName": "Diaspro-Markdown-{version}-Setup"
+  }
+}
