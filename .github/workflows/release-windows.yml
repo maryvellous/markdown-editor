@@ -14,8 +14,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Markdown Editor
         uses: actions/checkout@v7
+
+      - name: Checkout Diaspro Installer
+        uses: actions/checkout@v7
+        with:
+          repository: maryvellous/diaspro-installer
+          path: .diaspro-installer
 
       - name: Read version
         id: meta
@@ -47,8 +53,29 @@ jobs:
       - name: Generate app icons
         run: npm run icons
 
-      - name: Build NSIS installer
-        run: npm run tauri build -- --bundles nsis
+      - name: Build raw Windows executable
+        run: npm run tauri -- build --no-bundle
+
+      - name: Prepare Diaspro Installer payload
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force ".release-payload" | Out-Null
+          Copy-Item "src-tauri\target\release\diaspro-markdown.exe" ".release-payload\Diaspro Markdown.exe"
+
+      - name: Install Inno Setup 7
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP "innosetup-7.1.0-x64.exe"
+          Invoke-WebRequest "https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe" -OutFile $installer
+          $actualHash = (Get-FileHash -Algorithm SHA256 $installer).Hash.ToLowerInvariant()
+          $expectedHash = "0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f"
+          if ($actualHash -ne $expectedHash) { throw "Inno Setup SHA256 mismatch: $actualHash" }
+          $process = Start-Process -FilePath $installer -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Inno Setup installer exited with code $($process.ExitCode)" }
+
+      - name: Build Diaspro installer
+        shell: pwsh
+        run: .\.diaspro-installer\build.ps1 -ConfigPath ".\diaspro-installer.json" -Version "${{ steps.meta.outputs.version }}"
 
       - name: Publish GitHub release
         shell: pwsh
@@ -58,19 +85,17 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           $version = "${{ steps.meta.outputs.version }}"
           $tag = "${{ steps.meta.outputs.tag }}"
-          $asset = Get-ChildItem "src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
-
-          if (-not $asset) {
-            throw "Installer NSIS non trovato."
-          }
+          $asset = Get-Item ".\dist-installer\Diaspro-Markdown-$version-Setup.exe"
 
           $notes = @"
           ## Diaspro Markdown $version
 
-          - titlebar Windows personalizzata in stile Diaspro;
-          - controlli minimizza, massimizza e chiudi integrati nella UI;
-          - doppio clic sulla barra per massimizzare o ripristinare;
-          - la chiusura dalla titlebar rispetta le modifiche non salvate.
+          Installer Windows generato con Diaspro Installer.
+
+          - interfaccia di installazione coerente con il brand Diaspro;
+          - installazione per l'utente corrente;
+          - collegamenti Start e Desktop;
+          - associazioni .md e .markdown mantenute.
           "@
 
           $null = gh release view $tag 2>$null
