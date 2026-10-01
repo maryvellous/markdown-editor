@@ -17,12 +17,6 @@ jobs:
       - name: Checkout Markdown Editor
         uses: actions/checkout@v7
 
-      - name: Checkout Diaspro Installer
-        uses: actions/checkout@v7
-        with:
-          repository: maryvellous/diaspro-installer
-          path: .diaspro-installer
-
       - name: Read version
         id: meta
         shell: pwsh
