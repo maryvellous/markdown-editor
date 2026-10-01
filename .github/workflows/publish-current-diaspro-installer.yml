@@ -1,0 +1,25 @@
+name: Publish current Diaspro installer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-current-diaspro-installer.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Replace current release installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p current-installer
+          gh run download 36940497457 --repo maryvellous/markdown-editor --name diaspro-markdown-windows --dir current-installer
+          gh release delete-asset v0.3.1 "Diaspro.Markdown_0.3.1_x64-setup.exe" --repo maryvellous/markdown-editor -y || true
+          gh release upload v0.3.1 "current-installer/Diaspro-Markdown-0.3.1-Setup.exe" --repo maryvellous/markdown-editor --clobber
+          gh release view v0.3.1 --repo maryvellous/markdown-editor --json assets
