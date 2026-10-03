@@ -34,7 +34,7 @@ jobs:
           cache: true
 
       - name: Bootstrap Android project
-        run: ./mobile/tool/bootstrap-android.sh
+        run: bash ./mobile/tool/bootstrap-android.sh
 
       - name: Resolve packages
         working-directory: .mobile-build
