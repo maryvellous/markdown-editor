@@ -5,3 +5,4 @@ src-tauri/icons/*.ico
 src-tauri/icons/*.icns
 .DS_Store
 *.log
+.mobile-build/
