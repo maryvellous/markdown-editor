@@ -11,7 +11,8 @@ flutter create \
   --project-name diaspro_markdown_mobile \
   "$BUILD_DIR"
 
-rm -rf "$BUILD_DIR/lib"
+rm -rf "$BUILD_DIR/lib" "$BUILD_DIR/test"
+rm -f "$BUILD_DIR/analysis_options.yaml"
 cp -R "$ROOT/mobile/lib" "$BUILD_DIR/lib"
 cp "$ROOT/mobile/pubspec.yaml" "$BUILD_DIR/pubspec.yaml"
 mkdir -p "$BUILD_DIR/android/app/src/main/kotlin/dev/diaspro/diaspro_markdown_mobile"
