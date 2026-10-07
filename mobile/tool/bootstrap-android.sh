@@ -15,6 +15,9 @@ rm -rf "$BUILD_DIR/lib" "$BUILD_DIR/test"
 rm -f "$BUILD_DIR/analysis_options.yaml"
 cp -R "$ROOT/mobile/lib" "$BUILD_DIR/lib"
 cp "$ROOT/mobile/pubspec.yaml" "$BUILD_DIR/pubspec.yaml"
+if [[ -d "$ROOT/mobile/assets" ]]; then
+  cp -R "$ROOT/mobile/assets" "$BUILD_DIR/assets"
+fi
 
 mkdir -p "$BUILD_DIR/android/app/src/main/kotlin/dev/diaspro/diaspro_markdown_mobile"
 cp "$ROOT/mobile/android/MainActivity.kt" \
