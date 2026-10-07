@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="diaspro_icon_background">#1E1333</color>
+    <!-- Trasparente: il marchio deve apparire come nell'header, senza
+         il quadratone canvas scuro che deformava visivamente il launcher. -->
+    <color name="diaspro_icon_background">#00000000</color>
 </resources>
