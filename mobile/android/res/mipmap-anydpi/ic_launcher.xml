@@ -4,22 +4,28 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#1E1333"
-        android:pathData="M0,0h108v108h-108z" />
-    <path
-        android:fillColor="#7A3F67"
-        android:pathData="M24,18H68A14,14 0,0 1,82 32V76A14,14 0,0 1,68 90H24A14,14 0,0 1,10 76V32A14,14 0,0 1,24 18Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M24,71V39H34V44C38,39 42,37 47,37C54,37 58,41 60,46C64,40 69,37 75,37C84,37 88,43 88,52V71H78V54C78,48 76,45 72,45C66,45 62,50 62,57V71H52V54C52,48 50,45 46,45C40,45 34,50 34,57V71Z" />
+
+    <!-- Stessa composizione del BrandMark Flutter nell'header:
+         tile plum ruotato di -0.06 rad, m bianca, tre pallini separati. -->
+    <group
+        android:rotation="-3.44"
+        android:pivotX="47"
+        android:pivotY="54">
+        <path
+            android:fillColor="#7A3F67"
+            android:pathData="M32,23 H62 C70.84,23 78,30.16 78,39 V69 C78,77.84 70.84,85 62,85 H32 C23.16,85 16,77.84 16,69 V39 C16,30.16 23.16,23 32,23 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M39.35,47.52 Q36.92,47.52 35.60,49.79 V69.00 H27.00 V41.40 H35.06 L35.37,44.64 Q38.22,40.89 43.22,40.89 Q48.38,40.89 50.29,45.05 Q53.07,40.89 58.38,40.89 Q62.13,40.89 64.55,43.23 Q66.97,45.58 67.00,51.50 V69.00 H58.38 V51.63 Q58.38,49.05 57.50,48.29 Q56.62,47.52 55.09,47.52 Q52.51,47.52 51.26,49.79 L51.29,69.00 H42.69 V51.68 Q42.69,49.05 41.81,48.29 Q40.93,47.52 39.35,47.52 Z" />
+    </group>
+
     <path
         android:fillColor="#E8D19E"
-        android:pathData="M78,24a7,7 0,1 0,14 0a7,7 0,1 0,-14 0" />
+        android:pathData="M74.75,26.27 a6.53,6.53 0,1 0,13.06,0 a6.53,6.53 0,1 0,-13.06,0" />
     <path
         android:fillColor="#A5C4DC"
-        android:pathData="M81,45a6,6 0,1 0,12 0a6,6 0,1 0,-12 0" />
+        android:pathData="M79.65,46.67 a5.71,5.71 0,1 0,11.42,0 a5.71,5.71 0,1 0,-11.42,0" />
     <path
         android:fillColor="#98A78A"
-        android:pathData="M78,66a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" />
+        android:pathData="M71.48,65.44 a4.90,4.90 0,1 0,9.80,0 a4.90,4.90 0,1 0,-9.80,0" />
 </vector>
