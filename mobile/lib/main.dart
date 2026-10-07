@@ -1154,10 +1154,7 @@ class _MarkdownPreview extends StatelessWidget {
       children: <Widget>[
         for (final part in parts)
           if (part.isMermaid)
-            _MermaidPreviewCard(
-              source: part.content,
-              theme: mermaidTheme,
-            )
+            _MermaidPreviewCard(source: part.content)
           else if (part.content.trim().isNotEmpty)
             MarkdownBody(
               data: part.content,
@@ -1169,13 +1166,9 @@ class _MarkdownPreview extends StatelessWidget {
 }
 
 class _MermaidPreviewCard extends StatelessWidget {
-  const _MermaidPreviewCard({
-    required this.source,
-    required this.theme,
-  });
+  const _MermaidPreviewCard({required this.source});
 
   final String source;
-  final MermaidTheme theme;
 
   void _openFullscreen(BuildContext context) {
     Navigator.of(context).push(
@@ -1187,6 +1180,7 @@ class _MermaidPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mermaidTheme = MaterialMermaidTheme.fromTheme(Theme.of(context));
     return GestureDetector(
       onTap: () => _openFullscreen(context),
       child: Container(
@@ -1204,7 +1198,7 @@ class _MermaidPreviewCard extends StatelessWidget {
               child: AbsorbPointer(
                 child: MermaidView(
                   source: source,
-                  theme: theme,
+                  theme: mermaidTheme,
                   backgroundColor: Colors.white,
                   showControls: false,
                   allowFullscreen: false,
