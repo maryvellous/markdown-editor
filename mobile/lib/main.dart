@@ -397,7 +397,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
         <String, dynamic>{'uri': _uri, 'content': _editor.text},
       );
       if (data != null) {
-        _loadDocument(data, addToRecents: true);
+        _loadDocument(data, addToRecents: true, resetUndo: false);
         _showMessage('Salvato.');
       }
     } on PlatformException catch (error) {
@@ -418,7 +418,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
         },
       );
       if (data != null) {
-        _loadDocument(data, addToRecents: true);
+        _loadDocument(data, addToRecents: true, resetUndo: false);
         _showMessage('File salvato.');
       }
     } on PlatformException catch (error) {
@@ -429,12 +429,13 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
   void _loadDocument(
     Map<String, dynamic> data, {
     required bool addToRecents,
+    bool resetUndo = true,
   }) {
     final content = data['content'] as String? ?? '';
     final uri = data['uri'] as String?;
     final name = data['name'] as String? ?? 'documento.md';
 
-    _resetUndoHistory();
+    if (resetUndo) _resetUndoHistory();
     setState(() {
       _name = name;
       _uri = uri == null || uri.isEmpty ? null : uri;
@@ -1105,7 +1106,7 @@ class _MarkdownPreview extends StatelessWidget {
   final String markdown;
 
   static final RegExp _mermaidFence = RegExp(
-    r'```mermaid[ \\t]*\\r?\\n([\\s\\S]*?)\\r?\\n?```',
+    r'```mermaid[ \t]*\r?\n([\s\S]*?)\r?\n?```',
     caseSensitive: false,
   );
 
