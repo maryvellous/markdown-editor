@@ -1147,7 +1147,6 @@ class _MarkdownPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final parts = _segments();
-    final mermaidTheme = MaterialMermaidTheme.fromTheme(Theme.of(context));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 42, 20, 70),
