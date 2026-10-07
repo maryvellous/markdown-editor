@@ -1154,34 +1154,9 @@ class _MarkdownPreview extends StatelessWidget {
       children: <Widget>[
         for (final part in parts)
           if (part.isMermaid)
-            Container(
-              height: 300,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _sand.withValues(alpha: 0.7)),
-              ),
-              child: MermaidView(
-                source: part.content,
-                theme: mermaidTheme,
-                backgroundColor: Colors.white,
-                showControls: false,
-                allowFullscreen: false,
-                semanticNodes: true,
-                errorBuilder: (context, error) => Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Diagramma Mermaid non valido:\n$error',
-                    style: const TextStyle(
-                      color: Color(0xFF6E3945),
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
+            _MermaidPreviewCard(
+              source: part.content,
+              theme: mermaidTheme,
             )
           else if (part.content.trim().isNotEmpty)
             MarkdownBody(
@@ -1189,6 +1164,199 @@ class _MarkdownPreview extends StatelessWidget {
               selectable: true,
             ),
       ],
+    );
+  }
+}
+
+class _MermaidPreviewCard extends StatelessWidget {
+  const _MermaidPreviewCard({
+    required this.source,
+    required this.theme,
+  });
+
+  final String source;
+  final MaterialMermaidTheme theme;
+
+  void _openFullscreen(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _MermaidFullscreenPage(source: source),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _openFullscreen(context),
+      child: Container(
+        height: 300,
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _sand.withValues(alpha: 0.7)),
+        ),
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: AbsorbPointer(
+                child: MermaidView(
+                  source: source,
+                  theme: theme,
+                  backgroundColor: Colors.white,
+                  showControls: false,
+                  allowFullscreen: false,
+                  semanticNodes: true,
+                  errorBuilder: (context, error) => Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Diagramma Mermaid non valido:\n$error',
+                      style: const TextStyle(
+                        color: Color(0xFF6E3945),
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10,
+              bottom: 10,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: _canvas.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(Icons.open_in_full, size: 15, color: Colors.white),
+                      SizedBox(width: 6),
+                      Text(
+                        'Tocca per ingrandire',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MermaidFullscreenPage extends StatefulWidget {
+  const _MermaidFullscreenPage({required this.source});
+
+  final String source;
+
+  @override
+  State<_MermaidFullscreenPage> createState() => _MermaidFullscreenPageState();
+}
+
+class _MermaidFullscreenPageState extends State<_MermaidFullscreenPage> {
+  final TransformationController _transform = TransformationController();
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  void _resetView() {
+    _transform.value = Matrix4.identity();
+  }
+
+  void _toggleZoom() {
+    final currentScale = _transform.value.getMaxScaleOnAxis();
+    if (currentScale > 1.05) {
+      _resetView();
+      return;
+    }
+    _transform.value = Matrix4.identity()..scale(2.5);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mermaidTheme = MaterialMermaidTheme.fromTheme(
+      ThemeData.light(useMaterial3: true),
+    );
+
+    return Scaffold(
+      backgroundColor: _paper,
+      appBar: AppBar(
+        title: const Text(
+          'Diagramma Mermaid',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Adatta alla schermata',
+            onPressed: _resetView,
+            icon: const Icon(Icons.fit_screen),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onDoubleTap: _toggleZoom,
+              child: InteractiveViewer(
+                transformationController: _transform,
+                minScale: 1,
+                maxScale: 8,
+                panEnabled: true,
+                scaleEnabled: true,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: MermaidView(
+                      source: widget.source,
+                      theme: mermaidTheme,
+                      backgroundColor: Colors.white,
+                      showControls: false,
+                      allowFullscreen: false,
+                      semanticNodes: true,
+                      errorBuilder: (context, error) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'Diagramma Mermaid non valido:\n$error',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF6E3945),
+                              fontFamily: 'monospace',
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -1396,84 +1564,14 @@ class _BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = compact ? 38.0 : 58.0;
+    final size = compact ? 46.0 : 70.0;
     return SizedBox(
-      width: size + 8,
-      height: size + 5,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          Positioned(
-            left: 0,
-            top: 2,
-            child: Transform.rotate(
-              angle: -0.06,
-              child: Container(
-                width: size,
-                height: size,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _plum,
-                  borderRadius: BorderRadius.circular(compact ? 10 : 15),
-                ),
-                child: Text(
-                  'm',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: compact ? 25 : 38,
-                    height: 1,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          _Bubble(
-            left: size - 2,
-            top: 0,
-            color: _sand,
-            diameter: compact ? 8 : 11,
-          ),
-          _Bubble(
-            left: size + 1,
-            top: compact ? 13 : 19,
-            color: _blue,
-            diameter: compact ? 7 : 10,
-          ),
-          _Bubble(
-            left: size - 4,
-            top: compact ? 25 : 38,
-            color: _sage,
-            diameter: compact ? 6 : 9,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Bubble extends StatelessWidget {
-  const _Bubble({
-    required this.left,
-    required this.top,
-    required this.color,
-    required this.diameter,
-  });
-
-  final double left;
-  final double top;
-  final Color color;
-  final double diameter;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Container(
-        width: diameter,
-        height: diameter,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      width: size,
+      height: size,
+      child: Image.asset(
+        'assets/app_icon.png',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
       ),
     );
   }
