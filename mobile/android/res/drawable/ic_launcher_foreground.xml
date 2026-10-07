@@ -4,19 +4,28 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#7A3F67"
-        android:pathData="M26,22H65A13,13 0,0 1,78 35V73A13,13 0,0 1,65 86H26A13,13 0,0 1,13 73V35A13,13 0,0 1,26 22Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M27,69V41H36V45C39,41 43,39 47,39C53,39 57,42 59,47C63,42 67,39 73,39C81,39 85,44 85,52V69H76V54C76,49 74,46 70,46C65,46 61,50 61,56V69H52V54C52,49 50,46 46,46C41,46 36,50 36,56V69Z" />
+
+    <!-- Stessa composizione del BrandMark Flutter nell'header:
+         tile plum ruotato di -0.06 rad, m bianca, tre pallini separati. -->
+    <group
+        android:rotation="-3.44"
+        android:pivotX="47"
+        android:pivotY="54">
+        <path
+            android:fillColor="#7A3F67"
+            android:pathData="M32,23 H62 C70.84,23 78,30.16 78,39 V69 C78,77.84 70.84,85 62,85 H32 C23.16,85 16,77.84 16,69 V39 C16,30.16 23.16,23 32,23 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M39.35,47.52 Q36.92,47.52 35.60,49.79 V69.00 H27.00 V41.40 H35.06 L35.37,44.64 Q38.22,40.89 43.22,40.89 Q48.38,40.89 50.29,45.05 Q53.07,40.89 58.38,40.89 Q62.13,40.89 64.55,43.23 Q66.97,45.58 67.00,51.50 V69.00 H58.38 V51.63 Q58.38,49.05 57.50,48.29 Q56.62,47.52 55.09,47.52 Q52.51,47.52 51.26,49.79 L51.29,69.00 H42.69 V51.68 Q42.69,49.05 41.81,48.29 Q40.93,47.52 39.35,47.52 Z" />
+    </group>
+
     <path
         android:fillColor="#E8D19E"
-        android:pathData="M73,27a6.5,6.5 0,1 0,13 0a6.5,6.5 0,1 0,-13 0" />
+        android:pathData="M74.75,26.27 a6.53,6.53 0,1 0,13.06,0 a6.53,6.53 0,1 0,-13.06,0" />
     <path
         android:fillColor="#A5C4DC"
-        android:pathData="M76,46a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" />
+        android:pathData="M79.65,46.67 a5.71,5.71 0,1 0,11.42,0 a5.71,5.71 0,1 0,-11.42,0" />
     <path
         android:fillColor="#98A78A"
-        android:pathData="M73,65a5,5 0,1 0,10 0a5,5 0,1 0,-10 0" />
+        android:pathData="M71.48,65.44 a4.90,4.90 0,1 0,9.80,0 a4.90,4.90 0,1 0,-9.80,0" />
 </vector>
