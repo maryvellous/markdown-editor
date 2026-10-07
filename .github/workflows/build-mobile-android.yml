@@ -6,10 +6,19 @@ on:
     paths:
       - "mobile/**"
       - ".github/workflows/build-mobile-android.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/build-mobile-android.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-android:
@@ -33,6 +42,16 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Read mobile version
+        id: meta
+        shell: bash
+        run: |
+          raw_version="$(awk '/^version:/ {print $2; exit}' mobile/pubspec.yaml)"
+          version="${raw_version%%+*}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=mobile-v$version" >> "$GITHUB_OUTPUT"
+          echo "apk=diaspro-markdown-mobile-$version.apk" >> "$GITHUB_OUTPUT"
+
       - name: Bootstrap Android project
         run: bash ./mobile/tool/bootstrap-android.sh
 
@@ -48,23 +67,34 @@ jobs:
         working-directory: .mobile-build
         run: flutter build apk --release
 
-      - name: Stage APK
-        run: cp .mobile-build/build/app/outputs/flutter-apk/app-release.apk diaspro-markdown-mobile.apk
+      - name: Stage release files
+        shell: bash
+        run: |
+          cp .mobile-build/build/app/outputs/flutter-apk/app-release.apk "${{ steps.meta.outputs.apk }}"
+          sha256sum "${{ steps.meta.outputs.apk }}" > "${{ steps.meta.outputs.apk }}.sha256"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: diaspro-markdown-mobile-apk
-          path: diaspro-markdown-mobile.apk
+          name: diaspro-markdown-mobile-${{ steps.meta.outputs.version }}
+          path: |
+            ${{ steps.meta.outputs.apk }}
+            ${{ steps.meta.outputs.apk }}.sha256
           if-no-files-found: error
 
       - name: Publish mobile release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          APK: ${{ steps.meta.outputs.apk }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        shell: bash
         run: |
-          gh release delete mobile-v0.1.0 --cleanup-tag -y || true
-          gh release create mobile-v0.1.0 \
-            diaspro-markdown-mobile.apk \
+          gh release delete "$TAG" --cleanup-tag -y || true
+          gh release create "$TAG" \
+            "$APK" \
+            "$APK.sha256" \
             --target "$GITHUB_SHA" \
-            --title "Diaspro Markdown Mobile 0.1.0" \
-            --notes "Prima build Android Flutter/Dart di Diaspro Markdown."
+            --title "Diaspro Markdown Mobile $VERSION" \
+            --notes "Release Android stabile di Diaspro Markdown. Include editor e anteprima Markdown, apertura/salvataggio tramite Storage Access Framework, Recenti, guida rapida, layout tablet e icona launcher Diaspro (adaptive/themed sui dispositivi compatibili)."
