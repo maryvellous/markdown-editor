@@ -1,7 +1,7 @@
 name: diaspro_markdown_mobile
 description: Editor Markdown mobile leggero in stile Diaspro.
 publish_to: none
-version: 1.1.0+3
+version: 1.1.1+4
 
 environment:
   sdk: '>=3.12.0 <4.0.0'
@@ -14,3 +14,5 @@ dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/app_icon.png
