@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:mermaid_flutter/mermaid_flutter.dart';
 
 const _canvas = Color(0xFF1E1333);
 const _card = Color(0xFF2B1C47);
@@ -125,6 +126,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
 
   final _editor = TextEditingController();
   final _editorFocus = FocusNode();
+  UndoHistoryController _undoController = UndoHistoryController();
   final List<RecentDocument> _recents = <RecentDocument>[];
 
   String _name = 'Senza titolo.md';
@@ -230,6 +232,13 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
       kind: GuideKind.snippet,
       value: '| Colonna A | Colonna B |\n| --- | --- |\n| Valore | Valore |',
     ),
+    GuideItem(
+      label: 'Diagramma Mermaid',
+      syntax: '```mermaid',
+      kind: GuideKind.snippet,
+      value: '```mermaid\ngraph TD\n  A[Inizio] --> B[Fine]\n```',
+      selectText: 'graph TD\n  A[Inizio] --> B[Fine]',
+    ),
   ];
 
   bool get _dirty => _editor.text != _savedContent;
@@ -253,6 +262,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
     _editor.removeListener(_onEditorChanged);
     _editor.dispose();
     _editorFocus.dispose();
+    _undoController.dispose();
     super.dispose();
   }
 
@@ -350,6 +360,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
 
   Future<void> _newDocument() async {
     if (!await _confirmDiscard()) return;
+    _resetUndoHistory();
     setState(() {
       _name = 'Senza titolo.md';
       _uri = null;
@@ -386,7 +397,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
         <String, dynamic>{'uri': _uri, 'content': _editor.text},
       );
       if (data != null) {
-        _loadDocument(data, addToRecents: true);
+        _loadDocument(data, addToRecents: true, resetUndo: false);
         _showMessage('Salvato.');
       }
     } on PlatformException catch (error) {
@@ -407,7 +418,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
         },
       );
       if (data != null) {
-        _loadDocument(data, addToRecents: true);
+        _loadDocument(data, addToRecents: true, resetUndo: false);
         _showMessage('File salvato.');
       }
     } on PlatformException catch (error) {
@@ -418,11 +429,13 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
   void _loadDocument(
     Map<String, dynamic> data, {
     required bool addToRecents,
+    bool resetUndo = true,
   }) {
     final content = data['content'] as String? ?? '';
     final uri = data['uri'] as String?;
     final name = data['name'] as String? ?? 'documento.md';
 
+    if (resetUndo) _resetUndoHistory();
     setState(() {
       _name = name;
       _uri = uri == null || uri.isEmpty ? null : uri;
@@ -434,6 +447,12 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
     });
 
     if (addToRecents) _rememberCurrentDocument();
+  }
+
+  void _resetUndoHistory() {
+    final previous = _undoController;
+    _undoController = UndoHistoryController();
+    WidgetsBinding.instance.addPostFrameCallback((_) => previous.dispose());
   }
 
   void _rememberCurrentDocument() {
@@ -844,6 +863,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
                           mode: mode,
                           editor: _editor,
                           editorFocus: _editorFocus,
+                          undoController: _undoController,
                         ),
                 ),
                 _StatusBar(
@@ -906,17 +926,20 @@ class _Workspace extends StatelessWidget {
     required this.mode,
     required this.editor,
     required this.editorFocus,
+    required this.undoController,
   });
 
   final EditorMode mode;
   final TextEditingController editor;
   final FocusNode editorFocus;
+  final UndoHistoryController undoController;
 
   @override
   Widget build(BuildContext context) {
     final editorPane = _EditorPane(
       controller: editor,
       focusNode: editorFocus,
+      undoController: undoController,
     );
     final previewPane = _PreviewPane(markdown: editor.text);
 
@@ -938,39 +961,97 @@ class _Workspace extends StatelessWidget {
 }
 
 class _EditorPane extends StatelessWidget {
-  const _EditorPane({required this.controller, required this.focusNode});
+  const _EditorPane({
+    required this.controller,
+    required this.focusNode,
+    required this.undoController,
+  });
 
   final TextEditingController controller;
   final FocusNode focusNode;
+  final UndoHistoryController undoController;
 
   @override
   Widget build(BuildContext context) {
     return _Pane(
       label: 'MARKDOWN',
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        expands: true,
-        maxLines: null,
-        minLines: null,
-        textAlignVertical: TextAlignVertical.top,
-        keyboardType: TextInputType.multiline,
-        autocorrect: false,
-        enableSuggestions: false,
-        style: const TextStyle(
-          color: Color(0xFFF7F2E8),
-          fontFamily: 'monospace',
-          fontSize: 15,
-          height: 1.58,
-        ),
-        cursorColor: _sand,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.fromLTRB(18, 42, 18, 72),
-          hintText: '# Inizia a scrivere…',
-          hintStyle: TextStyle(color: Colors.white38),
-        ),
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              undoController: undoController,
+              expands: true,
+              maxLines: null,
+              minLines: null,
+              textAlignVertical: TextAlignVertical.top,
+              keyboardType: TextInputType.multiline,
+              autocorrect: false,
+              enableSuggestions: false,
+              style: const TextStyle(
+                color: Color(0xFFF7F2E8),
+                fontFamily: 'monospace',
+                fontSize: 15,
+                height: 1.58,
+              ),
+              cursorColor: _sand,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.fromLTRB(18, 52, 18, 72),
+                hintText: '# Inizia a scrivere…',
+                hintStyle: TextStyle(color: Colors.white38),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 8,
+            top: 7,
+            child: _UndoRedoButtons(controller: undoController),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _UndoRedoButtons extends StatelessWidget {
+  const _UndoRedoButtons({required this.controller});
+
+  final UndoHistoryController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<UndoHistoryValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: _canvas.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _lavender.withValues(alpha: 0.18)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              IconButton(
+                tooltip: 'Annulla',
+                iconSize: 19,
+                visualDensity: VisualDensity.compact,
+                onPressed: value.canUndo ? controller.undo : null,
+                icon: const Icon(Icons.undo),
+              ),
+              IconButton(
+                tooltip: 'Ripristina',
+                iconSize: 19,
+                visualDensity: VisualDensity.compact,
+                onPressed: value.canRedo ? controller.redo : null,
+                icon: const Icon(Icons.redo),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -997,7 +1078,8 @@ class _PreviewPane extends StatelessWidget {
                     style: TextStyle(color: Color(0xFF5E5069)),
                   ),
                 ],
-              ),            )
+              ),
+            )
           : Theme(
               data: ThemeData.light(useMaterial3: true).copyWith(
                 textTheme: ThemeData.light().textTheme.apply(
@@ -1005,12 +1087,108 @@ class _PreviewPane extends StatelessWidget {
                       displayColor: _plum,
                     ),
               ),
-              child: Markdown(
-                data: markdown,
-                selectable: true,
-                padding: const EdgeInsets.fromLTRB(20, 42, 20, 70),
-              ),
+              child: _MarkdownPreview(markdown: markdown),
             ),
+    );
+  }
+}
+
+class _PreviewSegment {
+  const _PreviewSegment({required this.content, required this.isMermaid});
+
+  final String content;
+  final bool isMermaid;
+}
+
+class _MarkdownPreview extends StatelessWidget {
+  const _MarkdownPreview({required this.markdown});
+
+  final String markdown;
+
+  static final RegExp _mermaidFence = RegExp(
+    r'```mermaid[ \t]*\r?\n([\s\S]*?)\r?\n?```',
+    caseSensitive: false,
+  );
+
+  List<_PreviewSegment> _segments() {
+    final result = <_PreviewSegment>[];
+    var cursor = 0;
+
+    for (final match in _mermaidFence.allMatches(markdown)) {
+      if (match.start > cursor) {
+        result.add(
+          _PreviewSegment(
+            content: markdown.substring(cursor, match.start),
+            isMermaid: false,
+          ),
+        );
+      }
+      result.add(
+        _PreviewSegment(
+          content: (match.group(1) ?? '').trim(),
+          isMermaid: true,
+        ),
+      );
+      cursor = match.end;
+    }
+
+    if (cursor < markdown.length) {
+      result.add(
+        _PreviewSegment(
+          content: markdown.substring(cursor),
+          isMermaid: false,
+        ),
+      );
+    }
+
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = _segments();
+    final mermaidTheme = MaterialMermaidTheme.fromTheme(Theme.of(context));
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 42, 20, 70),
+      children: <Widget>[
+        for (final part in parts)
+          if (part.isMermaid)
+            Container(
+              height: 300,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _sand.withValues(alpha: 0.7)),
+              ),
+              child: MermaidView(
+                source: part.content,
+                theme: mermaidTheme,
+                backgroundColor: Colors.white,
+                showControls: false,
+                allowFullscreen: false,
+                semanticNodes: true,
+                errorBuilder: (context, error) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Diagramma Mermaid non valido:\n$error',
+                    style: const TextStyle(
+                      color: Color(0xFF6E3945),
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else if (part.content.trim().isNotEmpty)
+            MarkdownBody(
+              data: part.content,
+              selectable: true,
+            ),
+      ],
     );
   }
 }
