@@ -1175,7 +1175,7 @@ class _MermaidPreviewCard extends StatelessWidget {
   });
 
   final String source;
-  final MaterialMermaidTheme theme;
+  final MermaidTheme theme;
 
   void _openFullscreen(BuildContext context) {
     Navigator.of(context).push(
@@ -1286,7 +1286,7 @@ class _MermaidFullscreenPageState extends State<_MermaidFullscreenPage> {
       _resetView();
       return;
     }
-    _transform.value = Matrix4.identity()..scale(2.5);
+    _transform.value = Matrix4.diagonal3Values(2.5, 2.5, 1.0);
   }
 
   @override
