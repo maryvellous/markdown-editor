@@ -7,7 +7,7 @@ Piccolo editor desktop per file Markdown, pensato per essere rapido da aprire e 
 - apre file `.md` e `.markdown` dal pulsante **Apri** o direttamente da Esplora file;
 - modifica Markdown in un editor essenziale con conteggio parole e caratteri;
 - mostra l'anteprima Markdown in tempo reale, anche affiancata all'editor;
-- renderizza i blocchi ```mermaid come diagrammi consultabili, con viewer desktop a zoom/pan;
+- renderizza i fenced code block `mermaid` come diagrammi consultabili, con viewer desktop a zoom/pan;
 - crea nuovi documenti e usa **Salva** / **Salva con nome**;
 - mantiene un elenco degli **8 file aperti più di recente**, riapribili con un click;
 - include una **guida rapida Markdown laterale** con le sintassi comuni cliccabili per inserirle nell'editor;
