@@ -331,8 +331,7 @@
     diagram.className = 'mermaid-diagram';
     diagram.innerHTML = svg;
 
-    block.dataset.mermaidSource = source;
-    block.dataset.mermaidSvg = svg;
+    block.__diasproMermaidSvg = svg;
     head.append(title, openButton);
     block.append(head, diagram);
     return block;
@@ -929,6 +928,7 @@
 
   document.addEventListener('keydown', (event) => {
     if (!(event.ctrlKey || event.metaKey)) return;
+    if (!mermaidViewer.hidden) return;
 
     const key = event.key.toLowerCase();
     if (key === 'z') {
@@ -955,7 +955,7 @@
     const viewerButton = event.target.closest('[data-mermaid-viewer]');
     if (viewerButton) {
       const block = viewerButton.closest('.mermaid-block');
-      openMermaidViewer(block?.dataset.mermaidSvg || '');
+      openMermaidViewer(block?.__diasproMermaidSvg || '');
       return;
     }
 
