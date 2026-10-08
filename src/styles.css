@@ -66,16 +66,12 @@ button { -webkit-tap-highlight-color: transparent; }
   letter-spacing: 0.015em;
 }
 
-.window-title-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
-  border-radius: 50%;
-  background: var(--plum);
-  box-shadow:
-    9px -3px 0 -1px var(--sand),
-    13px 3px 0 -2px var(--blue);
-  margin-right: 10px;
+.window-title-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  object-fit: contain;
+  margin-right: 2px;
 }
 
 .window-controls {
@@ -134,56 +130,11 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .brand-mark {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
-  border-radius: 12px;
-  background: var(--plum);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
-}
-
-.brand-letter {
-  position: absolute;
-  left: 10px;
-  bottom: 3px;
-  color: var(--white);
-  font-family: var(--font-heading);
-  font-size: 39px;
-  font-weight: 760;
-  line-height: 1;
-  transform: rotate(-7deg);
-  transform-origin: center;
-}
-
-.bubble {
-  position: absolute;
-  display: block;
-  border-radius: 50%;
-}
-
-.bubble-sand {
-  width: 10px;
-  height: 10px;
-  top: 11px;
-  right: 9px;
-  background: var(--sand);
-}
-
-.bubble-blue {
-  width: 7px;
-  height: 7px;
-  top: 5px;
-  right: 4px;
-  background: var(--blue);
-}
-
-.bubble-sage {
-  width: 5px;
-  height: 5px;
-  top: 3px;
-  right: 13px;
-  background: var(--sage);
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.24));
 }
 
 .document-meta {
@@ -297,6 +248,13 @@ button { -webkit-tap-highlight-color: transparent; }
   background: var(--canvas);
 }
 
+.viewbar-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .mode-switch {
   display: inline-flex;
   gap: 3px;
@@ -304,6 +262,49 @@ button { -webkit-tap-highlight-color: transparent; }
   border: 1px solid rgba(157, 133, 198, 0.22);
   border-radius: 12px;
   background: rgba(43, 28, 71, 0.72);
+}
+
+.history-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.history-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid rgba(157, 133, 198, 0.22);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.84);
+  background: rgba(43, 28, 71, 0.46);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-button > span:first-child {
+  color: var(--sand);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.history-button:hover:not(:disabled) {
+  border-color: rgba(232, 209, 158, 0.36);
+  background: rgba(122, 63, 103, 0.24);
+  color: var(--white);
+}
+
+.history-button:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.history-button:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 2px;
 }
 
 .mode-button {
@@ -516,17 +517,10 @@ button { -webkit-tap-highlight-color: transparent; }
 .empty-preview p { margin: 0; }
 
 .empty-mark {
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  border-radius: 14px;
-  background: var(--plum);
-  color: var(--white);
-  font-family: var(--font-heading);
-  font-size: 36px;
-  font-weight: 800;
-  transform: rotate(-5deg);
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 20px rgba(122, 63, 103, 0.18));
 }
 
 .statusbar {
@@ -630,6 +624,22 @@ button { -webkit-tap-highlight-color: transparent; }
   .file-path { max-width: calc(100vw - 110px); }
 
   .shortcut-hint { display: none; }
+
+  .viewbar-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .history-button span:last-child {
+    display: none;
+  }
+
+  .history-button {
+    min-width: 34px;
+    justify-content: center;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1004,4 +1014,212 @@ button { -webkit-tap-highlight-color: transparent; }
     width: fit-content;
     max-width: 100%;
   }
+}
+
+
+/* ── Mermaid desktop ─────────────────────────────────────── */
+.mermaid-block {
+  margin: 1.15em 0 1.35em;
+  overflow: hidden;
+  border: 1px solid rgba(122, 63, 103, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.mermaid-block-head {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 9px 7px 13px;
+  border-bottom: 1px solid rgba(122, 63, 103, 0.13);
+  background: rgba(232, 209, 158, 0.18);
+}
+
+.mermaid-block-title {
+  color: rgba(76, 39, 65, 0.78);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mermaid-open-button {
+  padding: 5px 8px;
+  border: 1px solid rgba(122, 63, 103, 0.18);
+  border-radius: 8px;
+  color: #4c2741;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.mermaid-open-button:hover {
+  border-color: rgba(122, 63, 103, 0.38);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.mermaid-open-button:focus-visible {
+  outline: 2px solid var(--plum);
+  outline-offset: 2px;
+}
+
+.mermaid-diagram {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 18px 20px 22px;
+  background: #fffdf8;
+}
+
+.mermaid-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  padding: 16px 18px;
+  border-left: 4px solid var(--terracotta);
+  background: rgba(143, 90, 90, 0.08);
+  color: #6e3945;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mermaid-error strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #5b2e3a;
+}
+
+.mermaid-error pre {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+}
+
+.mermaid-viewer[hidden] {
+  display: none;
+}
+
+.mermaid-viewer {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(18, 11, 31, 0.78);
+  backdrop-filter: blur(4px);
+}
+
+.mermaid-viewer-dialog {
+  width: min(1500px, 96vw);
+  height: min(960px, 92vh);
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(232, 209, 158, 0.26);
+  border-radius: 16px;
+  background: #fffdf8;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
+}
+
+.mermaid-viewer-toolbar {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 8px 10px 8px 16px;
+  border-bottom: 1px solid rgba(157, 133, 198, 0.22);
+  background: var(--card);
+  color: var(--white);
+}
+
+.mermaid-viewer-toolbar strong {
+  font-family: var(--font-heading);
+  font-size: 13px;
+}
+
+.mermaid-viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.viewer-button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid rgba(157, 133, 198, 0.28);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(30, 19, 51, 0.5);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.viewer-button-wide {
+  min-width: 58px;
+  font-size: 10px;
+}
+
+.viewer-button:hover {
+  border-color: rgba(232, 209, 158, 0.42);
+  background: rgba(122, 63, 103, 0.42);
+}
+
+.viewer-button:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 1px;
+}
+
+.viewer-close-button {
+  margin-left: 5px;
+  font-size: 19px;
+}
+
+.viewer-close-button:hover {
+  background: var(--terracotta);
+}
+
+.mermaid-viewer-canvas {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(122, 63, 103, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 63, 103, 0.045) 1px, transparent 1px),
+    #fffdf8;
+  background-size: 24px 24px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.mermaid-viewer-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.mermaid-viewer-content {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  transform-origin: 0 0;
+}
+
+.mermaid-viewer-content svg {
+  display: block;
+  max-width: none;
+  height: auto;
 }
