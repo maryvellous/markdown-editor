@@ -114,7 +114,9 @@ fn render_markdown(markdown: String) -> String {
     let mut rendered = String::new();
     html::push_html(&mut rendered, parser);
 
-    ammonia::Builder::default().clean(&rendered).to_string()
+    let mut sanitizer = ammonia::Builder::default();
+    sanitizer.add_tag_attributes("code", &["class"]);
+    sanitizer.clean(&rendered).to_string()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
