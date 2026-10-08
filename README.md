@@ -7,15 +7,17 @@ Piccolo editor desktop per file Markdown, pensato per essere rapido da aprire e 
 - apre file `.md` e `.markdown` dal pulsante **Apri** o direttamente da Esplora file;
 - modifica Markdown in un editor essenziale con conteggio parole e caratteri;
 - mostra l'anteprima Markdown in tempo reale, anche affiancata all'editor;
+- renderizza i blocchi ```mermaid come diagrammi consultabili, con viewer desktop a zoom/pan;
 - crea nuovi documenti e usa **Salva** / **Salva con nome**;
 - mantiene un elenco degli **8 file aperti più di recente**, riapribili con un click;
 - include una **guida rapida Markdown laterale** con le sintassi comuni cliccabili per inserirle nell'editor;
 - separa **Recenti** e **Guida** in due pannelli indipendenti richiamabili dalla rail laterale;
+- supporta undo/redo con pulsanti dedicati e scorciatoie `Ctrl+Z`, `Ctrl+Y` / `Ctrl+Shift+Z`;
 - supporta `Ctrl+N`, `Ctrl+O`, `Ctrl+S` e `Ctrl+Shift+S`;
 - registra Diaspro Markdown come applicazione per i file Markdown;
 - aggiunge **Documento Markdown** al menu di Windows **Nuovo** tramite `ShellNew`;
 - usa la palette e il linguaggio visivo della cartella `diaspro-general-features`;
-- usa un'icona Diaspro dedicata: riquadro plum, `m` minuscola e le tre bolle sand/blue/sage.
+- usa la stessa icona Diaspro finale della versione mobile, sia nell'interfaccia sia per eseguibile, collegamenti e installer.
 
 ## UI
 
@@ -32,7 +34,7 @@ Sul bordo sinistro c’è una piccola rail con due strumenti distinti:
 
 I due pannelli sono mutuamente esclusivi e possono essere richiusi ricliccando lo strumento attivo.
 
-Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitizzato prima di essere mostrato. In modalità **Scrivi**, quando l'anteprima non è visibile, il renderer non viene invocato a ogni battuta: questo riduce ulteriormente il lavoro su CPU meno recenti.
+Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitizzato prima di essere mostrato. I fenced code block marcati `mermaid` mantengono solo la classe di linguaggio necessaria e vengono poi renderizzati localmente dal frontend con Mermaid, senza CDN. In modalità **Scrivi**, quando l'anteprima non è visibile, il renderer non viene invocato a ogni battuta: questo riduce ulteriormente il lavoro su CPU meno recenti.
 
 ## File recenti
 
@@ -79,6 +81,6 @@ Il workflow GitHub Actions **Build Windows** esegue la stessa build su Windows e
 src/                         frontend minimale
 src-tauri/                   backend e configurazione Tauri
 src-tauri/windows/hooks.nsh  integrazione “Nuovo → Documento Markdown”
-src-tauri/icons/app-icon.svg sorgente dell'icona m Diaspro
+src/assets/app_icon.png        sorgente icona desktop + UI
 diaspro-general-features/    riferimenti visuali e componenti Diaspro
 ```
