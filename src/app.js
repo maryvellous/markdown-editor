@@ -28,6 +28,16 @@
   const wordCount = document.getElementById('wordCount');
   const charCount = document.getElementById('charCount');
   const toast = document.getElementById('toast');
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const mermaidViewer = document.getElementById('mermaidViewer');
+  const mermaidViewerCanvas = document.getElementById('mermaidViewerCanvas');
+  const mermaidViewerContent = document.getElementById('mermaidViewerContent');
+  const mermaidZoomOutBtn = document.getElementById('mermaidZoomOutBtn');
+  const mermaidZoomResetBtn = document.getElementById('mermaidZoomResetBtn');
+  const mermaidZoomInBtn = document.getElementById('mermaidZoomInBtn');
+  const mermaidFitBtn = document.getElementById('mermaidFitBtn');
+  const mermaidCloseBtn = document.getElementById('mermaidCloseBtn');
 
   const state = {
     path: null,
@@ -39,6 +49,30 @@
     renderTimer: null,
     previewDirty: true,
     toastTimer: null,
+    history: [],
+    historyIndex: -1,
+    historyLastKind: null,
+    historyLastAt: 0,
+    applyingHistory: false,
+  };
+
+  const MERMAID_CACHE_LIMIT = 24;
+  const mermaidCache = new Map();
+  let mermaidInitialized = false;
+  let mermaidRenderSequence = 0;
+  const viewerState = {
+    svg: '',
+    scale: 1,
+    x: 0,
+    y: 0,
+    naturalWidth: 0,
+    naturalHeight: 0,
+    dragging: false,
+    pointerId: null,
+    startPointerX: 0,
+    startPointerY: 0,
+    startX: 0,
+    startY: 0,
   };
 
   const GUIDE_ITEMS = [
@@ -49,6 +83,7 @@
     { label: 'Barrato', syntax: '~~testo~~', type: 'wrap', before: '~~', after: '~~', placeholder: 'testo' },
     { label: 'Codice inline', syntax: TICK + 'codice' + TICK, type: 'wrap', before: TICK, after: TICK, placeholder: 'codice' },
     { label: 'Blocco codice', syntax: FENCE, type: 'snippet', value: FENCE + '\nlinguaggio\ncodice\n' + FENCE, selectText: 'codice' },
+    { label: 'Diagramma Mermaid', syntax: FENCE + 'mermaid', type: 'snippet', value: FENCE + 'mermaid\ngraph TD\n  A[Inizio] --> B[Fine]\n' + FENCE, selectText: 'graph TD\n  A[Inizio] --> B[Fine]' },
     { label: 'Citazione', syntax: '> testo', type: 'prefix', value: '> ', placeholder: 'testo' },
     { label: 'Elenco puntato', syntax: '- voce', type: 'prefix', value: '- ', placeholder: 'voce' },
     { label: 'Elenco numerato', syntax: '1. voce', type: 'prefix', value: '1. ', placeholder: 'voce' },
@@ -120,12 +155,381 @@
     charCount.textContent = text.length + ' ' + (text.length === 1 ? 'carattere' : 'caratteri');
   }
 
+  function currentEditorSnapshot() {
+    return {
+      value: editor.value,
+      selectionStart: editor.selectionStart,
+      selectionEnd: editor.selectionEnd,
+    };
+  }
+
+  function sameSnapshot(a, b) {
+    return Boolean(
+      a &&
+      b &&
+      a.value === b.value &&
+      a.selectionStart === b.selectionStart &&
+      a.selectionEnd === b.selectionEnd,
+    );
+  }
+
+  function updateHistoryControls() {
+    undoBtn.disabled = state.historyIndex <= 0;
+    redoBtn.disabled = state.historyIndex < 0 || state.historyIndex >= state.history.length - 1;
+  }
+
+  function resetHistory() {
+    state.history = [currentEditorSnapshot()];
+    state.historyIndex = 0;
+    state.historyLastKind = null;
+    state.historyLastAt = 0;
+    updateHistoryControls();
+  }
+
+  function commitHistory(kind = 'edit') {
+    if (state.applyingHistory) return;
+
+    const snapshot = currentEditorSnapshot();
+    const current = state.history[state.historyIndex];
+    if (sameSnapshot(snapshot, current)) {
+      updateHistoryControls();
+      return;
+    }
+
+    if (state.historyIndex < state.history.length - 1) {
+      state.history = state.history.slice(0, state.historyIndex + 1);
+    }
+
+    const now = Date.now();
+    const coalesce =
+      kind === 'typing' &&
+      state.historyLastKind === 'typing' &&
+      now - state.historyLastAt < 700 &&
+      state.historyIndex === state.history.length - 1 &&
+      state.historyIndex > 0;
+
+    if (coalesce) {
+      state.history[state.historyIndex] = snapshot;
+    } else {
+      state.history.push(snapshot);
+      state.historyIndex = state.history.length - 1;
+
+      if (state.history.length > 120) {
+        state.history.shift();
+        state.historyIndex -= 1;
+      }
+    }
+
+    state.historyLastKind = kind;
+    state.historyLastAt = now;
+    updateHistoryControls();
+  }
+
+  function applyHistorySnapshot(snapshot) {
+    if (!snapshot) return;
+    state.applyingHistory = true;
+    editor.value = snapshot.value;
+    editor.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
+    state.applyingHistory = false;
+    state.historyLastKind = null;
+    state.historyLastAt = 0;
+    schedulePreview();
+    editor.focus();
+    updateHistoryControls();
+  }
+
+  function undoEditor() {
+    if (state.historyIndex <= 0) return;
+    state.historyIndex -= 1;
+    applyHistorySnapshot(state.history[state.historyIndex]);
+  }
+
+  function redoEditor() {
+    if (state.historyIndex >= state.history.length - 1) return;
+    state.historyIndex += 1;
+    applyHistorySnapshot(state.history[state.historyIndex]);
+  }
+
   function renderEmptyPreview() {
     preview.innerHTML =
       '<div class="empty-preview">' +
-        '<div class="empty-mark">m</div>' +
+        '<img class="empty-mark" src="./assets/app_icon.png" alt="" aria-hidden="true" />' +
         '<p>L’anteprima comparirà qui mentre scrivi.</p>' +
       '</div>';
+  }
+
+
+  function ensureMermaidInitialized() {
+    if (mermaidInitialized) return true;
+    if (!window.mermaid) return false;
+
+    window.mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: 'base',
+      suppressErrorRendering: true,
+      themeVariables: {
+        primaryColor: '#f4ecd9',
+        primaryTextColor: '#2b1c47',
+        primaryBorderColor: '#7a3f67',
+        lineColor: '#7a3f67',
+        secondaryColor: '#e8d19e',
+        tertiaryColor: '#a5c4dc',
+        background: '#fffdf8',
+        mainBkg: '#fffdf8',
+        nodeBorder: '#7a3f67',
+        clusterBkg: '#f4ecd9',
+        clusterBorder: '#9d85c6',
+        edgeLabelBackground: '#fffdf8',
+        fontFamily: 'Inter, Segoe UI, system-ui, sans-serif',
+      },
+      flowchart: {
+        htmlLabels: false,
+        useMaxWidth: true,
+      },
+    });
+    mermaidInitialized = true;
+    return true;
+  }
+
+  function readCachedMermaid(source) {
+    if (!mermaidCache.has(source)) return null;
+    const svg = mermaidCache.get(source);
+    mermaidCache.delete(source);
+    mermaidCache.set(source, svg);
+    return svg;
+  }
+
+  function cacheMermaid(source, svg) {
+    mermaidCache.delete(source);
+    mermaidCache.set(source, svg);
+    while (mermaidCache.size > MERMAID_CACHE_LIMIT) {
+      const firstKey = mermaidCache.keys().next().value;
+      mermaidCache.delete(firstKey);
+    }
+  }
+
+  function buildMermaidBlock(svg, source) {
+    const block = document.createElement('section');
+    block.className = 'mermaid-block';
+
+    const head = document.createElement('div');
+    head.className = 'mermaid-block-head';
+
+    const title = document.createElement('span');
+    title.className = 'mermaid-block-title';
+    title.textContent = 'Diagramma Mermaid';
+
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'mermaid-open-button';
+    openButton.textContent = 'Apri grande';
+    openButton.title = 'Apri il diagramma nel viewer';
+    openButton.dataset.mermaidViewer = 'true';
+
+    const diagram = document.createElement('div');
+    diagram.className = 'mermaid-diagram';
+    diagram.innerHTML = svg;
+
+    block.dataset.mermaidSource = source;
+    block.dataset.mermaidSvg = svg;
+    head.append(title, openButton);
+    block.append(head, diagram);
+    return block;
+  }
+
+  function buildMermaidError(source, error) {
+    const block = document.createElement('section');
+    block.className = 'mermaid-block mermaid-block-error';
+
+    const errorBox = document.createElement('div');
+    errorBox.className = 'mermaid-error';
+
+    const title = document.createElement('strong');
+    title.textContent = 'Diagramma Mermaid non valido';
+
+    const message = document.createElement('div');
+    message.textContent = String(error || 'Errore sconosciuto');
+
+    const raw = document.createElement('pre');
+    const code = document.createElement('code');
+    code.textContent = source;
+    raw.appendChild(code);
+
+    errorBox.append(title, message, raw);
+    block.appendChild(errorBox);
+    return block;
+  }
+
+  async function renderMermaidBlocks(version) {
+    const mermaidCodes = Array.from(preview.querySelectorAll('pre > code.language-mermaid'));
+    if (mermaidCodes.length === 0) return;
+
+    if (!ensureMermaidInitialized()) {
+      mermaidCodes.forEach((code) => {
+        const source = code.textContent || '';
+        code.parentElement.replaceWith(
+          buildMermaidError(source, 'Renderer Mermaid non disponibile.'),
+        );
+      });
+      return;
+    }
+
+    for (const code of mermaidCodes) {
+      if (version !== state.renderVersion) return;
+
+      const source = code.textContent || '';
+      const pre = code.parentElement;
+      const cached = readCachedMermaid(source);
+
+      if (cached) {
+        pre.replaceWith(buildMermaidBlock(cached, source));
+        continue;
+      }
+
+      try {
+        const id = 'diaspro-mermaid-' + (++mermaidRenderSequence);
+        const result = await window.mermaid.render(id, source);
+        if (version !== state.renderVersion) return;
+        cacheMermaid(source, result.svg);
+        pre.replaceWith(buildMermaidBlock(result.svg, source));
+      } catch (error) {
+        if (version !== state.renderVersion) return;
+        pre.replaceWith(buildMermaidError(source, error));
+      }
+    }
+  }
+
+  function getSvgNaturalSize(svgElement) {
+    const viewBox = svgElement?.viewBox?.baseVal;
+    if (viewBox && viewBox.width > 0 && viewBox.height > 0) {
+      return { width: viewBox.width, height: viewBox.height };
+    }
+
+    const width = Number.parseFloat(svgElement?.getAttribute('width')) || svgElement?.getBoundingClientRect().width || 900;
+    const height = Number.parseFloat(svgElement?.getAttribute('height')) || svgElement?.getBoundingClientRect().height || 600;
+    return { width, height };
+  }
+
+  function applyViewerTransform() {
+    mermaidViewerContent.style.transform =
+      'translate(' + viewerState.x + 'px, ' + viewerState.y + 'px) scale(' + viewerState.scale + ')';
+    mermaidZoomResetBtn.textContent = Math.round(viewerState.scale * 100) + '%';
+  }
+
+  function centerViewerAtScale(scale) {
+    const canvasRect = mermaidViewerCanvas.getBoundingClientRect();
+    viewerState.scale = Math.max(0.15, Math.min(8, scale));
+    viewerState.x = (canvasRect.width - viewerState.naturalWidth * viewerState.scale) / 2;
+    viewerState.y = (canvasRect.height - viewerState.naturalHeight * viewerState.scale) / 2;
+    applyViewerTransform();
+  }
+
+  function fitMermaidViewer() {
+    if (!viewerState.naturalWidth || !viewerState.naturalHeight) return;
+    const canvasRect = mermaidViewerCanvas.getBoundingClientRect();
+    const padding = 56;
+    const fitScale = Math.min(
+      (canvasRect.width - padding) / viewerState.naturalWidth,
+      (canvasRect.height - padding) / viewerState.naturalHeight,
+    );
+    centerViewerAtScale(Math.max(0.15, Math.min(4, fitScale)));
+  }
+
+  function setViewerScale(nextScale) {
+    const canvasRect = mermaidViewerCanvas.getBoundingClientRect();
+    const centerX = canvasRect.width / 2;
+    const centerY = canvasRect.height / 2;
+    const oldScale = viewerState.scale || 1;
+    const scale = Math.max(0.15, Math.min(8, nextScale));
+    const contentX = (centerX - viewerState.x) / oldScale;
+    const contentY = (centerY - viewerState.y) / oldScale;
+
+    viewerState.scale = scale;
+    viewerState.x = centerX - contentX * scale;
+    viewerState.y = centerY - contentY * scale;
+    applyViewerTransform();
+  }
+
+  function openMermaidViewer(svg) {
+    if (!svg) return;
+    viewerState.svg = svg;
+    mermaidViewerContent.innerHTML = svg;
+    mermaidViewer.hidden = false;
+    mermaidViewer.setAttribute('aria-hidden', 'false');
+
+    window.requestAnimationFrame(() => {
+      const svgElement = mermaidViewerContent.querySelector('svg');
+      const size = getSvgNaturalSize(svgElement);
+      viewerState.naturalWidth = size.width;
+      viewerState.naturalHeight = size.height;
+      if (svgElement) {
+        svgElement.style.width = size.width + 'px';
+        svgElement.style.height = size.height + 'px';
+      }
+      fitMermaidViewer();
+      mermaidCloseBtn.focus();
+    });
+  }
+
+  function closeMermaidViewer() {
+    mermaidViewer.hidden = true;
+    mermaidViewer.setAttribute('aria-hidden', 'true');
+    mermaidViewerContent.replaceChildren();
+    viewerState.dragging = false;
+    viewerState.pointerId = null;
+  }
+
+  function setupMermaidViewer() {
+    mermaidZoomOutBtn.addEventListener('click', () => setViewerScale(viewerState.scale / 1.25));
+    mermaidZoomInBtn.addEventListener('click', () => setViewerScale(viewerState.scale * 1.25));
+    mermaidZoomResetBtn.addEventListener('click', () => centerViewerAtScale(1));
+    mermaidFitBtn.addEventListener('click', fitMermaidViewer);
+    mermaidCloseBtn.addEventListener('click', closeMermaidViewer);
+
+    mermaidViewer.addEventListener('click', (event) => {
+      if (event.target === mermaidViewer) closeMermaidViewer();
+    });
+
+    mermaidViewerCanvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const direction = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+      setViewerScale(viewerState.scale * direction);
+    }, { passive: false });
+
+    mermaidViewerCanvas.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      viewerState.dragging = true;
+      viewerState.pointerId = event.pointerId;
+      viewerState.startPointerX = event.clientX;
+      viewerState.startPointerY = event.clientY;
+      viewerState.startX = viewerState.x;
+      viewerState.startY = viewerState.y;
+      mermaidViewerCanvas.classList.add('is-dragging');
+      mermaidViewerCanvas.setPointerCapture(event.pointerId);
+    });
+
+    mermaidViewerCanvas.addEventListener('pointermove', (event) => {
+      if (!viewerState.dragging || event.pointerId !== viewerState.pointerId) return;
+      viewerState.x = viewerState.startX + event.clientX - viewerState.startPointerX;
+      viewerState.y = viewerState.startY + event.clientY - viewerState.startPointerY;
+      applyViewerTransform();
+    });
+
+    const stopDragging = (event) => {
+      if (!viewerState.dragging) return;
+      if (event.pointerId !== undefined && event.pointerId !== viewerState.pointerId) return;
+      viewerState.dragging = false;
+      mermaidViewerCanvas.classList.remove('is-dragging');
+      viewerState.pointerId = null;
+    };
+
+    mermaidViewerCanvas.addEventListener('pointerup', stopDragging);
+    mermaidViewerCanvas.addEventListener('pointercancel', stopDragging);
+
+    window.addEventListener('resize', () => {
+      if (!mermaidViewer.hidden) fitMermaidViewer();
+    });
   }
 
   async function refreshPreview() {
@@ -148,6 +552,7 @@
       const html = await invoke('render_markdown', { markdown });
       if (version !== state.renderVersion) return;
       preview.innerHTML = html;
+      await renderMermaidBlocks(version);
     } catch (error) {
       if (version !== state.renderVersion) return;
       preview.textContent = 'Errore anteprima: ' + String(error);
@@ -174,6 +579,16 @@
     editor.scrollTop = 0;
     preview.scrollTop = 0;
     addRecent(documentData);
+    resetHistory();
+    refreshPreview();
+  }
+
+  function syncSavedDocument(documentData) {
+    if (!documentData) return;
+    state.path = documentData.path || state.path;
+    state.name = documentData.name || state.name;
+    state.savedContent = documentData.content ?? editor.value;
+    addRecent(documentData);
     refreshPreview();
   }
 
@@ -188,6 +603,7 @@
     state.name = 'Senza titolo.md';
     state.savedContent = '';
     editor.value = '';
+    resetHistory();
     refreshPreview();
     editor.focus();
   }
@@ -223,7 +639,7 @@
         suggestedName,
       });
       if (!result) return false;
-      loadDocument(result);
+      syncSavedDocument(result);
       showToast('File salvato.');
       return true;
     } catch (error) {
@@ -241,7 +657,7 @@
         path: state.path,
         content: editor.value,
       });
-      loadDocument(result);
+      syncSavedDocument(result);
       showToast('Salvato.');
       return true;
     } catch (error) {
@@ -435,6 +851,7 @@
       editor.setSelectionRange(selectionStart, selectionEnd);
     }
 
+    commitHistory('guide');
     schedulePreview();
   }
 
@@ -444,6 +861,7 @@
     setActivePanel(state.activePanel);
 
     if (!requireTauri()) {
+      resetHistory();
       refreshPreview();
       return;
     }
@@ -451,20 +869,42 @@
     try {
       const result = await invoke('startup_document');
       if (result) loadDocument(result);
-      else refreshPreview();
+      else {
+        resetHistory();
+        refreshPreview();
+      }
     } catch (error) {
       showToast(String(error), true);
+      resetHistory();
       refreshPreview();
     }
   }
 
-  editor.addEventListener('input', schedulePreview);
+  editor.addEventListener('beforeinput', (event) => {
+    if (event.inputType === 'historyUndo') {
+      event.preventDefault();
+      undoEditor();
+    } else if (event.inputType === 'historyRedo') {
+      event.preventDefault();
+      redoEditor();
+    }
+  });
+
+  editor.addEventListener('input', (event) => {
+    const kind = ['insertText', 'deleteContentBackward', 'deleteContentForward'].includes(event.inputType)
+      ? 'typing'
+      : (event.inputType || 'edit');
+    commitHistory(kind);
+    schedulePreview();
+  });
+
   editor.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') {
       event.preventDefault();
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
       editor.setRangeText('  ', start, end, 'end');
+      commitHistory('tab');
       schedulePreview();
     }
   });
@@ -473,6 +913,8 @@
   document.getElementById('openBtn').addEventListener('click', openDocument);
   document.getElementById('saveBtn').addEventListener('click', saveDocument);
   document.getElementById('saveAsBtn').addEventListener('click', saveAs);
+  undoBtn.addEventListener('click', undoEditor);
+  redoBtn.addEventListener('click', redoEditor);
 
   recentPanelBtn.addEventListener('click', () => togglePanel('recent'));
   guidePanelBtn.addEventListener('click', () => togglePanel('guide'));
@@ -489,7 +931,14 @@
     if (!(event.ctrlKey || event.metaKey)) return;
 
     const key = event.key.toLowerCase();
-    if (key === 's') {
+    if (key === 'z') {
+      event.preventDefault();
+      if (event.shiftKey) redoEditor();
+      else undoEditor();
+    } else if (key === 'y') {
+      event.preventDefault();
+      redoEditor();
+    } else if (key === 's') {
       event.preventDefault();
       if (event.shiftKey) saveAs();
       else saveDocument();
@@ -503,12 +952,27 @@
   });
 
   preview.addEventListener('click', (event) => {
+    const viewerButton = event.target.closest('[data-mermaid-viewer]');
+    if (viewerButton) {
+      const block = viewerButton.closest('.mermaid-block');
+      openMermaidViewer(block?.dataset.mermaidSvg || '');
+      return;
+    }
+
     const link = event.target.closest('a');
     if (!link) return;
     event.preventDefault();
     showToast('Link: ' + (link.getAttribute('href') || ''));
   });
 
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !mermaidViewer.hidden) {
+      event.preventDefault();
+      closeMermaidViewer();
+    }
+  });
+
   setupWindowControls();
+  setupMermaidViewer();
   loadStartupDocument();
 })();
