@@ -1,15 +1,20 @@
 {
   "name": "diaspro-markdown",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "description": "Editor Markdown desktop leggero in stile Diaspro",
   "scripts": {
     "tauri": "tauri",
-    "dev": "tauri dev",
-    "icons": "tauri icon src-tauri/icons/app-icon.svg",
-    "build": "npm run icons && tauri build"
+    "vendor:mermaid": "node tools/vendor-mermaid.mjs",
+    "postinstall": "npm run vendor:mermaid",
+    "dev": "npm run vendor:mermaid && tauri dev",
+    "icons": "tauri icon src/assets/app_icon.png",
+    "build": "npm run vendor:mermaid && npm run icons && tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.0"
+  },
+  "dependencies": {
+    "mermaid": "11.17.2"
   }
 }
