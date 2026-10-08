@@ -11,7 +11,7 @@
   <div class="app-shell">
     <div id="windowTitlebar" class="window-titlebar" data-tauri-drag-region>
       <div class="window-title" data-tauri-drag-region>
-        <span class="window-title-dot" aria-hidden="true"></span>
+        <img class="window-title-icon" src="./assets/app_icon.png" alt="" aria-hidden="true" data-tauri-drag-region />
         <span data-tauri-drag-region>Diaspro Markdown</span>
       </div>
       <div class="window-controls" aria-label="Controlli finestra">
@@ -23,12 +23,7 @@
 
     <header class="topbar">
       <div class="brand-block">
-        <div class="brand-mark" aria-hidden="true">
-          <span class="brand-letter">m</span>
-          <i class="bubble bubble-sand"></i>
-          <i class="bubble bubble-blue"></i>
-          <i class="bubble bubble-sage"></i>
-        </div>
+        <img class="brand-mark" src="./assets/app_icon.png" alt="" aria-hidden="true" />
         <div class="document-meta">
           <div class="document-line">
             <span id="dirtyDot" class="dirty-dot" aria-hidden="true"></span>
@@ -47,12 +42,24 @@
     </header>
 
     <div class="viewbar">
-      <div class="mode-switch" role="group" aria-label="Modalità di visualizzazione">
-        <button class="mode-button" type="button" data-mode="edit">Scrivi</button>
-        <button class="mode-button is-active" type="button" data-mode="split">Affianca</button>
-        <button class="mode-button" type="button" data-mode="preview">Leggi</button>
+      <div class="viewbar-left">
+        <div class="mode-switch" role="group" aria-label="Modalità di visualizzazione">
+          <button class="mode-button" type="button" data-mode="edit">Scrivi</button>
+          <button class="mode-button is-active" type="button" data-mode="split">Affianca</button>
+          <button class="mode-button" type="button" data-mode="preview">Leggi</button>
+        </div>
+        <div class="history-actions" role="group" aria-label="Cronologia modifiche">
+          <button id="undoBtn" class="history-button" type="button" title="Annulla (Ctrl+Z)" disabled>
+            <span aria-hidden="true">↶</span>
+            <span>Annulla</span>
+          </button>
+          <button id="redoBtn" class="history-button" type="button" title="Ripristina (Ctrl+Y / Ctrl+Shift+Z)" disabled>
+            <span aria-hidden="true">↷</span>
+            <span>Ripristina</span>
+          </button>
+        </div>
       </div>
-      <span class="shortcut-hint">Ctrl+S salva · Ctrl+O apre</span>
+      <span class="shortcut-hint">Ctrl+Z annulla · Ctrl+Y ripristina · Ctrl+S salva</span>
     </div>
 
     <div id="contentRow" class="content-row">
@@ -135,7 +142,7 @@
           <div class="pane-label">ANTEPRIMA</div>
           <article id="preview" class="markdown-body">
             <div class="empty-preview">
-              <div class="empty-mark">m</div>
+              <img class="empty-mark" src="./assets/app_icon.png" alt="" aria-hidden="true" />
               <p>L'anteprima comparirà qui mentre scrivi.</p>
             </div>
           </article>
@@ -156,8 +163,27 @@
     </footer>
   </div>
 
+  <div id="mermaidViewer" class="mermaid-viewer" hidden aria-hidden="true">
+    <div class="mermaid-viewer-dialog" role="dialog" aria-modal="true" aria-labelledby="mermaidViewerTitle">
+      <div class="mermaid-viewer-toolbar">
+        <strong id="mermaidViewerTitle">Diagramma Mermaid</strong>
+        <div class="mermaid-viewer-actions" role="group" aria-label="Controlli diagramma">
+          <button id="mermaidZoomOutBtn" class="viewer-button" type="button" title="Riduci">−</button>
+          <button id="mermaidZoomResetBtn" class="viewer-button viewer-button-wide" type="button" title="Dimensione reale">100%</button>
+          <button id="mermaidZoomInBtn" class="viewer-button" type="button" title="Ingrandisci">+</button>
+          <button id="mermaidFitBtn" class="viewer-button viewer-button-wide" type="button" title="Adatta alla finestra">Adatta</button>
+          <button id="mermaidCloseBtn" class="viewer-button viewer-close-button" type="button" title="Chiudi (Esc)" aria-label="Chiudi diagramma">×</button>
+        </div>
+      </div>
+      <div id="mermaidViewerCanvas" class="mermaid-viewer-canvas">
+        <div id="mermaidViewerContent" class="mermaid-viewer-content"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <script src="./vendor/mermaid.min.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

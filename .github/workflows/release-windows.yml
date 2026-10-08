@@ -86,7 +86,9 @@ jobs:
 
           Installer Windows generato con Diaspro Installer.
 
-          - interfaccia di installazione coerente con il brand Diaspro;
+          - supporto Mermaid con viewer desktop a zoom e trascinamento;
+          - undo/redo con pulsanti dedicati e scorciatoie da tastiera;
+          - nuova icona Diaspro coerente con la versione mobile;
           - installazione per l'utente corrente;
           - collegamenti Start e Desktop;
           - associazioni .md e .markdown mantenute.

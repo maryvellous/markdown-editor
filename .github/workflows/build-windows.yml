@@ -43,8 +43,18 @@ jobs:
       - name: Check frontend syntax
         run: node --check src/app.js
 
+      - name: Verify local Mermaid runtime
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "src\vendor\mermaid.min.js")) { throw "Mermaid runtime non generato" }
+          $bundle = Get-Item "src\vendor\mermaid.min.js"
+          if ($bundle.Length -lt 100000) { throw "Mermaid runtime troppo piccolo: $($bundle.Length) byte" }
+
       - name: Generate app icons
         run: npm run icons
+
+      - name: Run Rust rendering tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Build raw Windows executable
         run: npm run tauri -- build --no-bundle

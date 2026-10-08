@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Diaspro Markdown",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "publisher": "Diaspro",
     "publisherUrl": "https://studiodiaspro.com",
     "appId": "dev.diaspro.markdown",

@@ -114,7 +114,9 @@ fn render_markdown(markdown: String) -> String {
     let mut rendered = String::new();
     html::push_html(&mut rendered, parser);
 
-    ammonia::Builder::default().clean(&rendered).to_string()
+    let mut sanitizer = ammonia::Builder::default();
+    sanitizer.add_tag_attributes("code", &["class"]);
+    sanitizer.clean(&rendered).to_string()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -130,4 +132,28 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio di Diaspro Markdown");
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::render_markdown;
+
+    #[test]
+    fn preserves_mermaid_language_class() {
+        let rendered = render_markdown(
+            "```mermaid\ngraph TD\n  A[Inizio] --> B[Fine]\n```".to_string(),
+        );
+
+        assert!(rendered.contains("class=\"language-mermaid\""));
+        assert!(rendered.contains("graph TD"));
+    }
+
+    #[test]
+    fn sanitizer_still_removes_scripts() {
+        let rendered = render_markdown("<script>alert('x')</script>\n\nTesto".to_string());
+
+        assert!(!rendered.contains("<script"));
+        assert!(rendered.contains("Testo"));
+    }
 }
