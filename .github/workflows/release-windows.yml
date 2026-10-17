@@ -86,6 +86,8 @@ jobs:
 
           Installer Windows generato con Diaspro Installer.
 
+          - corretta la finestra console nera all’avvio su Windows;
+          - installer Diaspro aggiornato con testi più leggibili;
           - supporto Mermaid con viewer desktop a zoom e trascinamento;
           - undo/redo con pulsanti dedicati e scorciatoie da tastiera;
           - nuova icona Diaspro coerente con la versione mobile;

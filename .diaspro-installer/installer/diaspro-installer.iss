@@ -105,6 +105,36 @@ begin
   WizardForm.FinishedHeadingLabel.Font.Color := DiasproSand;
   WizardForm.FinishedHeadingLabel.Font.Style := [fsBold];
   WizardForm.FinishedLabel.Font.Color := DiasproWhite;
+
+  { Explicit contrast for every built-in page on the purple surfaces. }
+  WizardForm.SelectDirLabel.Font.Color := DiasproWhite;
+  WizardForm.SelectDirBrowseLabel.Font.Color := DiasproWhite;
+  WizardForm.DiskSpaceLabel.Font.Color := DiasproBlue;
+  WizardForm.SelectStartMenuFolderLabel.Font.Color := DiasproWhite;
+  WizardForm.SelectStartMenuFolderBrowseLabel.Font.Color := DiasproWhite;
+  WizardForm.SelectComponentsLabel.Font.Color := DiasproWhite;
+  WizardForm.ComponentsDiskSpaceLabel.Font.Color := DiasproBlue;
+  WizardForm.SelectTasksLabel.Font.Color := DiasproWhite;
+  WizardForm.ReadyLabel.Font.Color := DiasproWhite;
+  WizardForm.PreparingLabel.Font.Color := DiasproWhite;
+  WizardForm.StatusLabel.Font.Color := DiasproWhite;
+  WizardForm.FilenameLabel.Font.Color := DiasproBlue;
+  WizardForm.InfoBeforeClickLabel.Font.Color := DiasproWhite;
+  WizardForm.InfoAfterClickLabel.Font.Color := DiasproWhite;
+  WizardForm.LicenseLabel1.Font.Color := DiasproWhite;
+  WizardForm.PasswordEditLabel.Font.Color := DiasproWhite;
+  WizardForm.UserInfoNameLabel.Font.Color := DiasproWhite;
+  WizardForm.UserInfoOrgLabel.Font.Color := DiasproWhite;
+  WizardForm.UserInfoSerialLabel.Font.Color := DiasproWhite;
+  WizardForm.BeveledLabel.Font.Color := DiasproBlue;
+
+  WizardForm.NoIconsCheck.Font.Color := DiasproWhite;
+  WizardForm.YesRadio.Font.Color := DiasproWhite;
+  WizardForm.NoRadio.Font.Color := DiasproWhite;
+  WizardForm.PreparingYesRadio.Font.Color := DiasproWhite;
+  WizardForm.PreparingNoRadio.Font.Color := DiasproWhite;
+  WizardForm.LicenseAcceptedRadio.Font.Color := DiasproWhite;
+  WizardForm.LicenseNotAcceptedRadio.Font.Color := DiasproWhite;
 end;
 
 procedure StyleSurfaces;
@@ -116,6 +146,22 @@ begin
   WizardForm.InnerPage.Color := DiasproCard;
   WizardForm.FinishedPage.Color := DiasproCard;
   WizardForm.MainPanel.Color := DiasproCanvas;
+
+  { Lists and read-only text panes need both background and text set. }
+  WizardForm.ReadyMemo.Color := DiasproCard;
+  WizardForm.ReadyMemo.Font.Color := DiasproWhite;
+  WizardForm.ComponentsList.Color := DiasproCard;
+  WizardForm.ComponentsList.Font.Color := DiasproWhite;
+  WizardForm.TasksList.Color := DiasproCard;
+  WizardForm.TasksList.Font.Color := DiasproWhite;
+  WizardForm.RunList.Color := DiasproCard;
+  WizardForm.RunList.Font.Color := DiasproWhite;
+  WizardForm.LicenseMemo.Color := DiasproCard;
+  WizardForm.LicenseMemo.Font.Color := DiasproWhite;
+  WizardForm.InfoBeforeMemo.Color := DiasproCard;
+  WizardForm.InfoBeforeMemo.Font.Color := DiasproWhite;
+  WizardForm.InfoAfterMemo.Color := DiasproCard;
+  WizardForm.InfoAfterMemo.Font.Color := DiasproWhite;
 
   WelcomeAccent := TPanel.Create(WizardForm);
   WelcomeAccent.Parent := WizardForm.WelcomePage;
