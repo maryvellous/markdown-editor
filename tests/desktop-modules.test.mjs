@@ -107,3 +107,52 @@ test('recent documents handle denied storage and malformed JSON', () => {
   malformed.renderRecents();
   assert.equal(clearRecentBtn.disabled, true);
 });
+
+
+test('desktop entrypoint initializes guide, recents, history and preview together', async () => {
+  const elements = new Map();
+  function element() {
+    return {
+      value: '', selectionStart: 0, selectionEnd: 0, dataset: {}, children: [],
+      classList: { add() {}, remove() {}, toggle() {} },
+      listeners: new Map(),
+      addEventListener(name, fn) { this.listeners.set(name, fn); },
+      append(...children) { this.children.push(...children); },
+      appendChild(child) { this.children.push(child); },
+      replaceChildren() { this.children = []; },
+      setAttribute() {}, focus() {},
+    };
+  }
+  function getElementById(id) {
+    if (!elements.has(id)) elements.set(id, element());
+    return elements.get(id);
+  }
+  const calls = [];
+  const previousWindow = globalThis.window, previousDocument = globalThis.document;
+  globalThis.document = { getElementById, createElement: element,
+    querySelectorAll: () => [], addEventListener() {} };
+  globalThis.window = {
+    __TAURI__: { core: { invoke: async (command) => { calls.push(command); return null; } } },
+    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    clearTimeout() {}, setTimeout() {}, addEventListener() {},
+  };
+  try {
+    await import('../src/app.js');
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(calls, ['startup_document']);
+    assert.equal(getElementById('saveState').textContent, 'Salvato');
+    assert.equal(getElementById('undoBtn').disabled, true);
+    assert.equal(getElementById('redoBtn').disabled, true);
+    assert.equal(getElementById('recentEmpty').hidden, false);
+    assert.equal(getElementById('markdownGuide').children.length, 19);
+    assert.match(getElementById('preview').innerHTML, /anteprima comparirà/);
+    for (const id of ['newBtn', 'openBtn', 'saveBtn', 'saveAsBtn', 'mermaidFitBtn']) {
+      assert.equal(typeof getElementById(id).listeners.get('click'), 'function', id);
+    }
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+});
