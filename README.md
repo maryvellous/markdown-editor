@@ -56,10 +56,10 @@ L'obiettivo è funzionare bene anche su hardware non recente. Il requisito prati
 
 ## Sviluppo
 
-Prerequisiti: Node.js, Rust e i prerequisiti Windows richiesti da Tauri/WebView2.
+Prerequisiti: Node.js (versione in `.node-version`), Rust (versione in `rust-toolchain.toml`) e i prerequisiti Windows richiesti da Tauri/WebView2. Usare i lockfile versionati; aggiornare le dipendenze soltanto con un intervento esplicito e verificato.
 
 ```bash
-npm install
+npm ci
 npm run icons
 npm run dev
 ```
@@ -67,8 +67,8 @@ npm run dev
 ## Build Windows
 
 ```bash
-npm install
-npm run build
+npm ci
+npm run build -- --locked
 ```
 
 La build genera l'installer NSIS in `src-tauri/target/release/bundle/nsis/`.
