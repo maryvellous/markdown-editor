@@ -1,0 +1,80 @@
+name: Generate baseline dependency locks (temporary)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/generate-baseline-locks.yml'
+permissions:
+  contents: read
+jobs:
+  desktop-locks:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '26.13.1'
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable action
+        with:
+          toolchain: '1.100.0'
+      - name: Resolve desktop lockfiles
+        shell: pwsh
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { throw "npm resolution failed" }
+          cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw "Cargo resolution failed" }
+      - name: Export generated public lockfile data
+        shell: pwsh
+        run: |
+          foreach ($path in @("package-lock.json", "src-tauri/Cargo.lock")) {
+            $bytes = [IO.File]::ReadAllBytes((Resolve-Path $path))
+            $encoded = [Convert]::ToBase64String($bytes)
+            Write-Output "LOCKBEGIN $path $($encoded.Length)"
+            for ($i = 0; $i -lt $encoded.Length; $i += 2048) {
+              Write-Output "LOCKDATA $path $i $($encoded.Substring($i, [Math]::Min(2048, $encoded.Length - $i)))"
+            }
+            Write-Output "LOCKEND $path"
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-baseline-locks
+          path: |
+            package-lock.json
+            src-tauri/Cargo.lock
+          if-no-files-found: error
+  mobile-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.0'
+          channel: stable
+      - name: Resolve Flutter lockfile
+        working-directory: mobile
+        run: flutter pub get
+      - name: Export generated public lockfile data
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          path = 'mobile/pubspec.lock'
+          encoded = base64.b64encode(Path(path).read_bytes()).decode('ascii')
+          print(f'LOCKBEGIN {path} {len(encoded)}')
+          for i in range(0, len(encoded), 2048):
+              print(f'LOCKDATA {path} {i} {encoded[i:i+2048]}')
+          print(f'LOCKEND {path}')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mobile-baseline-lock
+          path: mobile/pubspec.lock
+          if-no-files-found: error
