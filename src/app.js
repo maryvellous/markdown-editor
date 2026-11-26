@@ -1,3 +1,5 @@
+import { normalizeLineEndings, serializeDocument } from './document-format.mjs';
+
 (() => {
   'use strict';
 
@@ -43,6 +45,7 @@
     path: null,
     name: 'Senza titolo.md',
     savedContent: '',
+    savedFileContent: '',
     mode: 'split',
     activePanel: readStoredPanelState(),
     renderVersion: 0,
@@ -584,7 +587,8 @@
     if (!documentData) return;
     state.path = documentData.path || null;
     state.name = documentData.name || 'documento.md';
-    state.savedContent = documentData.content || '';
+    state.savedFileContent = documentData.content ?? '';
+    state.savedContent = normalizeLineEndings(state.savedFileContent);
     editor.value = state.savedContent;
     editor.scrollTop = 0;
     preview.scrollTop = 0;
@@ -593,11 +597,12 @@
     refreshPreview();
   }
 
-  function syncSavedDocument(documentData, snapshot) {
+  function syncSavedDocument(documentData, snapshot, fileContent) {
     if (!documentData) return;
     state.path = documentData.path || state.path;
     state.name = documentData.name || state.name;
     state.savedContent = snapshot;
+    state.savedFileContent = fileContent;
     addRecent(documentData);
     refreshPreview();
   }
@@ -612,6 +617,7 @@
     state.path = null;
     state.name = 'Senza titolo.md';
     state.savedContent = '';
+    state.savedFileContent = '';
     editor.value = '';
     resetHistory();
     refreshPreview();
@@ -659,14 +665,15 @@
     if (!requireTauri()) return false;
     return withDocumentOperation(async () => {
       const snapshot = editor.value;
+      const fileContent = serializeDocument(snapshot, state.savedFileContent);
       try {
         const suggestedName = state.path ? state.name : 'documento.md';
         const result = await invoke('save_document_as', {
-          content: snapshot,
+          content: fileContent,
           suggestedName,
         });
         if (!result) return false;
-        syncSavedDocument(result, snapshot);
+        syncSavedDocument(result, snapshot, fileContent);
         showToast(isDirty() ? 'Versione precedente salvata; restano modifiche.' : 'File salvato.');
         return true;
       } catch (error) {
@@ -681,12 +688,13 @@
     if (!state.path) return saveAs();
     return withDocumentOperation(async () => {
       const snapshot = editor.value;
+      const fileContent = serializeDocument(snapshot, state.savedFileContent);
       try {
         const result = await invoke('save_document', {
           path: state.path,
-          content: snapshot,
+          content: fileContent,
         });
-        syncSavedDocument(result, snapshot);
+        syncSavedDocument(result, snapshot, fileContent);
         showToast(isDirty() ? 'Versione precedente salvata; restano modifiche.' : 'Salvato.');
         return true;
       } catch (error) {

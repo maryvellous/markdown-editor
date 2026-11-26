@@ -43,6 +43,9 @@ jobs:
       - name: Check frontend syntax
         run: node --check src/app.js
 
+      - name: Run desktop document regression tests
+        run: node --test tests/document-format.test.mjs
+
       - name: Verify local Mermaid runtime
         shell: pwsh
         run: |
