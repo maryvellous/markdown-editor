@@ -4,6 +4,8 @@
   "description": "Permessi per i controlli della finestra principale di Diaspro Markdown.",
   "windows": ["main"],
   "permissions": [
+    "core:event:default",
+    "core:window:allow-destroy",
     "core:window:default",
     "core:window:allow-close",
     "core:window:allow-minimize",

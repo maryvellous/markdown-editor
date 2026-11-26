@@ -14,6 +14,7 @@ flutter create \
 rm -rf "$BUILD_DIR/lib" "$BUILD_DIR/test"
 rm -f "$BUILD_DIR/analysis_options.yaml"
 cp -R "$ROOT/mobile/lib" "$BUILD_DIR/lib"
+cp -R "$ROOT/mobile/test" "$BUILD_DIR/test"
 cp "$ROOT/mobile/pubspec.yaml" "$BUILD_DIR/pubspec.yaml"
 if [[ -d "$ROOT/mobile/assets" ]]; then
   cp -R "$ROOT/mobile/assets" "$BUILD_DIR/assets"

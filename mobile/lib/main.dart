@@ -134,6 +134,8 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
   String _savedContent = '';
   EditorMode _mode = EditorMode.edit;
   bool _loading = true;
+  bool _documentBusy = false;
+  bool _pendingCheckRequested = false;
 
   static const _guide = <GuideItem>[
     GuideItem(
@@ -306,6 +308,10 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
         );
     } on PlatformException {
       // La cronologia non è essenziale al funzionamento dell'editor.
+    } on FormatException {
+      _recents.clear();
+    } on TypeError {
+      _recents.clear();
     }
   }
 
@@ -323,17 +329,39 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _takePendingDocument() async {
+  Future<void> _runDocumentOperation(Future<void> Function() operation) async {
+    if (!mounted || _documentBusy) return;
+    setState(() => _documentBusy = true);
     try {
-      final data = await _channel.invokeMapMethod<String, dynamic>(
-        'takePendingDocument',
-      );
-      if (data != null && mounted) {
-        _loadDocument(data, addToRecents: true);
+      await operation();
+    } finally {
+      if (mounted) {
+        setState(() => _documentBusy = false);
+        if (_pendingCheckRequested) {
+          _pendingCheckRequested = false;
+          await _takePendingDocument();
+        }
       }
-    } on PlatformException {
-      // L'app può essere aperta normalmente senza documento iniziale.
     }
+  }
+
+  Future<void> _takePendingDocument() async {
+    if (_documentBusy) {
+      _pendingCheckRequested = true;
+      return;
+    }
+    await _runDocumentOperation(() async {
+      try {
+        final data = await _channel.invokeMapMethod<String, dynamic>(
+          'takePendingDocument',
+        );
+        if (data != null && mounted && await _confirmDiscard() && mounted) {
+          _loadDocument(data, addToRecents: true);
+        }
+      } on PlatformException catch (error) {
+        _showError(error.message ?? 'Impossibile aprire il documento ricevuto.');
+      }
+    });
   }
 
   Future<bool> _confirmDiscard() async {
@@ -358,8 +386,8 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
     return result ?? false;
   }
 
-  Future<void> _newDocument() async {
-    if (!await _confirmDiscard()) return;
+  Future<void> _newDocument() => _runDocumentOperation(() async {
+    if (!await _confirmDiscard() || !mounted) return;
     _resetUndoHistory();
     setState(() {
       _name = 'Senza titolo.md';
@@ -369,43 +397,42 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
       _mode = EditorMode.edit;
     });
     _editorFocus.requestFocus();
-  }
+  });
 
-  Future<void> _openDocument() async {
-    if (!await _confirmDiscard()) return;
+  Future<void> _openDocument() => _runDocumentOperation(() async {
     try {
       final data = await _channel.invokeMapMethod<String, dynamic>(
         'pickOpenDocument',
       );
-      if (data != null && mounted) {
+      if (data != null && mounted && await _confirmDiscard() && mounted) {
         _loadDocument(data, addToRecents: true);
       }
     } on PlatformException catch (error) {
       _showError(error.message ?? 'Impossibile aprire il file.');
     }
-  }
+  });
 
   Future<void> _save() async {
     if (_uri == null || _uri!.isEmpty) {
       await _saveAs();
       return;
     }
-
-    try {
-      final data = await _channel.invokeMapMethod<String, dynamic>(
-        'writeDocument',
-        <String, dynamic>{'uri': _uri, 'content': _editor.text},
-      );
-      if (data != null) {
-        _loadDocument(data, addToRecents: true, resetUndo: false);
-        _showMessage('Salvato.');
+    await _runDocumentOperation(() async {
+      final snapshot = _editor.text;
+      try {
+        final data = await _channel.invokeMapMethod<String, dynamic>(
+          'writeDocument',
+          <String, dynamic>{'uri': _uri, 'content': snapshot},
+        );
+        if (data != null && mounted) _completeSave(data, snapshot);
+      } on PlatformException catch (error) {
+        _showError(error.message ?? 'Impossibile salvare il file.');
       }
-    } on PlatformException catch (error) {
-      _showError(error.message ?? 'Impossibile salvare il file.');
-    }
+    });
   }
 
-  Future<void> _saveAs() async {
+  Future<void> _saveAs() => _runDocumentOperation(() async {
+    final snapshot = _editor.text;
     final suggestedName = _name.toLowerCase().endsWith('.md')
         ? _name
         : '${_name.trim().isEmpty ? 'documento' : _name}.md';
@@ -414,28 +441,35 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
         'createDocument',
         <String, dynamic>{
           'suggestedName': suggestedName,
-          'content': _editor.text,
+          'content': snapshot,
         },
       );
-      if (data != null) {
-        _loadDocument(data, addToRecents: true, resetUndo: false);
-        _showMessage('File salvato.');
-      }
+      if (data != null && mounted) _completeSave(data, snapshot);
     } on PlatformException catch (error) {
       _showError(error.message ?? 'Impossibile creare il file.');
     }
+  });
+
+  void _completeSave(Map<String, dynamic> data, String snapshot) {
+    final uri = data['uri'] as String?;
+    setState(() {
+      _name = data['name'] as String? ?? _name;
+      _uri = uri == null || uri.isEmpty ? _uri : uri;
+      _savedContent = snapshot;
+    });
+    _rememberCurrentDocument();
+    _showMessage(_dirty ? 'Versione precedente salvata; restano modifiche.' : 'Salvato.');
   }
 
   void _loadDocument(
     Map<String, dynamic> data, {
     required bool addToRecents,
-    bool resetUndo = true,
   }) {
     final content = data['content'] as String? ?? '';
     final uri = data['uri'] as String?;
     final name = data['name'] as String? ?? 'documento.md';
 
-    if (resetUndo) _resetUndoHistory();
+    _resetUndoHistory();
     setState(() {
       _name = name;
       _uri = uri == null || uri.isEmpty ? null : uri;
@@ -459,7 +493,7 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
     final current = RecentDocument(
       name: _name,
       uri: _uri,
-      content: _editor.text,
+      content: _savedContent,
       openedAt: DateTime.now().toIso8601String(),
     );
     final identity = _uri ?? _name;
@@ -471,32 +505,33 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
 
   Future<void> _openRecent(RecentDocument recent) async {
     Navigator.pop(context);
-    if (!await _confirmDiscard()) return;
-
-    if (recent.uri != null && recent.uri!.isNotEmpty) {
-      try {
-        final data = await _channel.invokeMapMethod<String, dynamic>(
-          'readDocument',
-          <String, dynamic>{'uri': recent.uri},
-        );
-        if (data != null) {
-          _loadDocument(data, addToRecents: true);
-          return;
+    await _runDocumentOperation(() async {
+      Map<String, dynamic>? data;
+      if (recent.uri != null && recent.uri!.isNotEmpty) {
+        try {
+          data = await _channel.invokeMapMethod<String, dynamic>(
+            'readDocument',
+            <String, dynamic>{'uri': recent.uri},
+          );
+        } on PlatformException {
+          // Se il provider non concede più accesso, apri la copia locale recente.
         }
-      } on PlatformException {
-        // Se il provider non concede più accesso, apri la copia locale recente.
       }
-    }
-
-    _loadDocument(
-      <String, dynamic>{
-        'name': recent.name,
-        'content': recent.content,
-        'uri': '',
-      },
-      addToRecents: true,
-    );
-    _showMessage('Aperta la copia recente. Usa “Salva con nome” per conservarla.');
+      if (!mounted || !await _confirmDiscard() || !mounted) return;
+      if (data != null) {
+        _loadDocument(data, addToRecents: true);
+        return;
+      }
+      _loadDocument(
+        <String, dynamic>{
+          'name': recent.name,
+          'content': recent.content,
+          'uri': '',
+        },
+        addToRecents: true,
+      );
+      _showMessage('Aperta la copia recente. Usa “Salva con nome” per conservarla.');
+    });
   }
 
   void _insertGuideItem(GuideItem item) {
@@ -724,12 +759,14 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_dirty,
+      canPop: !_dirty && !_documentBusy,
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        if (await _confirmDiscard() && context.mounted) {
-          SystemNavigator.pop();
-        }
+        if (didPop || _documentBusy) return;
+        await _runDocumentOperation(() async {
+          if (await _confirmDiscard() && context.mounted) {
+            SystemNavigator.pop();
+          }
+        });
       },
       child: Scaffold(
         appBar: AppBar(
@@ -1430,7 +1467,12 @@ class _WideToolbar extends StatelessWidget {
           bottom: BorderSide(color: _lavender.withValues(alpha: 0.16)),
         ),
       ),
-      child: Row(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
           SegmentedButton<EditorMode>(
             segments: const <ButtonSegment<EditorMode>>[
@@ -1453,7 +1495,6 @@ class _WideToolbar extends StatelessWidget {
             selected: <EditorMode>{mode},
             onSelectionChanged: (value) => onModeChanged(value.first),
           ),
-          const Spacer(),
           IconButton(
             tooltip: 'Recenti',
             onPressed: onRecent,
@@ -1464,7 +1505,6 @@ class _WideToolbar extends StatelessWidget {
             onPressed: onGuide,
             icon: const Icon(Icons.menu_book_outlined),
           ),
-          const SizedBox(width: 6),
           TextButton.icon(
             onPressed: onNew,
             icon: const Icon(Icons.note_add_outlined),
@@ -1480,7 +1520,6 @@ class _WideToolbar extends StatelessWidget {
             icon: const Icon(Icons.save_as_outlined),
             label: const Text('Salva con nome'),
           ),
-          const SizedBox(width: 6),
           FilledButton.icon(
             onPressed: onSave,
             icon: const Icon(Icons.save_outlined),
@@ -1514,7 +1553,12 @@ class _StatusBar extends StatelessWidget {
           top: BorderSide(color: _lavender.withValues(alpha: 0.16)),
         ),
       ),
-      child: Row(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1534,7 +1578,6 @@ class _StatusBar extends StatelessWidget {
               ),
             ),
           ),
-          const Spacer(),
           Text(
             '$wordCount ${wordCount == 1 ? 'parola' : 'parole'} · '
             '$charCount ${charCount == 1 ? 'carattere' : 'caratteri'}',

@@ -54,6 +54,7 @@
     historyLastKind: null,
     historyLastAt: 0,
     applyingHistory: false,
+    documentBusy: false,
   };
 
   const MERMAID_CACHE_LIMIT = 24;
@@ -107,8 +108,18 @@
 
     minimizeBtn.addEventListener('click', () => appWindow.minimize());
     maximizeBtn.addEventListener('click', () => appWindow.toggleMaximize());
+    // All ordinary close requests (including Alt+F4) use the same guard.
+    let closeGuardReady = false;
+    appWindow.onCloseRequested((event) => {
+      if (state.documentBusy || !confirmDiscardIfNeeded()) event.preventDefault();
+    }).then(() => { closeGuardReady = true; }).catch((error) => {
+      showToast('Protezione chiusura non disponibile: ' + String(error), true);
+    });
     closeBtn.addEventListener('click', () => {
-      if (confirmDiscardIfNeeded()) appWindow.close();
+      if (state.documentBusy) return;
+      if (closeGuardReady || confirmDiscardIfNeeded()) {
+        appWindow.close().catch((error) => showToast(String(error), true));
+      }
     });
 
     titlebar.addEventListener('dblclick', (event) => {
@@ -582,11 +593,11 @@
     refreshPreview();
   }
 
-  function syncSavedDocument(documentData) {
+  function syncSavedDocument(documentData, snapshot) {
     if (!documentData) return;
     state.path = documentData.path || state.path;
     state.name = documentData.name || state.name;
-    state.savedContent = documentData.content ?? editor.value;
+    state.savedContent = snapshot;
     addRecent(documentData);
     refreshPreview();
   }
@@ -597,7 +608,7 @@
   }
 
   function newDocument() {
-    if (!confirmDiscardIfNeeded()) return;
+    if (state.documentBusy || !confirmDiscardIfNeeded()) return;
     state.path = null;
     state.name = 'Senza titolo.md';
     state.savedContent = '';
@@ -607,62 +618,82 @@
     editor.focus();
   }
 
-  async function openDocument() {
-    if (!confirmDiscardIfNeeded() || !requireTauri()) return;
+  async function withDocumentOperation(operation) {
+    if (state.documentBusy) {
+      showToast('Attendi la conclusione dell’operazione sul documento.');
+      return false;
+    }
+    state.documentBusy = true;
     try {
-      const result = await invoke('open_document');
-      if (result) loadDocument(result);
-    } catch (error) {
-      showToast(String(error), true);
+      return await operation();
+    } finally {
+      state.documentBusy = false;
     }
   }
 
-  async function openRecent(path) {
-    if (!confirmDiscardIfNeeded() || !requireTauri()) return;
+  async function openDocument() {
+    if (!requireTauri()) return;
+    return withDocumentOperation(async () => {
+      try {
+        const result = await invoke('open_document');
+        if (result && confirmDiscardIfNeeded()) loadDocument(result);
+      } catch (error) {
+        showToast(String(error), true);
+      }
+    });
+  }
 
-    try {
-      const result = await invoke('open_document_path', { path });
-      loadDocument(result);
-    } catch (error) {
-      removeRecent(path);
-      showToast('File recente non disponibile. È stato rimosso dall’elenco.', true);
-    }
+  async function openRecent(path) {
+    if (!requireTauri()) return;
+    return withDocumentOperation(async () => {
+      try {
+        const result = await invoke('open_document_path', { path });
+        if (confirmDiscardIfNeeded()) loadDocument(result);
+      } catch (error) {
+        showToast('Impossibile aprire il file recente: ' + String(error), true);
+      }
+    });
   }
 
   async function saveAs() {
     if (!requireTauri()) return false;
-    try {
-      const suggestedName = state.path ? state.name : 'documento.md';
-      const result = await invoke('save_document_as', {
-        content: editor.value,
-        suggestedName,
-      });
-      if (!result) return false;
-      syncSavedDocument(result);
-      showToast('File salvato.');
-      return true;
-    } catch (error) {
-      showToast(String(error), true);
-      return false;
-    }
+    return withDocumentOperation(async () => {
+      const snapshot = editor.value;
+      try {
+        const suggestedName = state.path ? state.name : 'documento.md';
+        const result = await invoke('save_document_as', {
+          content: snapshot,
+          suggestedName,
+        });
+        if (!result) return false;
+        syncSavedDocument(result, snapshot);
+        showToast(isDirty() ? 'Versione precedente salvata; restano modifiche.' : 'File salvato.');
+        return true;
+      } catch (error) {
+        showToast(String(error), true);
+        return false;
+      }
+    });
   }
 
   async function saveDocument() {
     if (!requireTauri()) return false;
     if (!state.path) return saveAs();
-
-    try {
-      const result = await invoke('save_document', {
-        path: state.path,
-        content: editor.value,
-      });
-      syncSavedDocument(result);
-      showToast('Salvato.');
-      return true;
-    } catch (error) {
-      showToast(String(error), true);
-      return false;
-    }
+    return withDocumentOperation(async () => {
+      const snapshot = editor.value;
+      try {
+        const result = await invoke('save_document', {
+          path: state.path,
+          content: snapshot,
+        });
+        syncSavedDocument(result, snapshot);
+        showToast(isDirty() ? 'Versione precedente salvata; restano modifiche.' : 'Salvato.');
+        return true;
+      } catch (error) {
+        showToast(String(error), true);
+        return false;
+      }
+    });
   }
 
   function setMode(mode) {
@@ -865,18 +896,17 @@
       return;
     }
 
-    try {
-      const result = await invoke('startup_document');
-      if (result) loadDocument(result);
-      else {
-        resetHistory();
+    resetHistory();
+    await withDocumentOperation(async () => {
+      try {
+        const result = await invoke('startup_document');
+        if (result && confirmDiscardIfNeeded()) loadDocument(result);
+        else refreshPreview();
+      } catch (error) {
+        showToast(String(error), true);
         refreshPreview();
       }
-    } catch (error) {
-      showToast(String(error), true);
-      resetHistory();
-      refreshPreview();
-    }
+    });
   }
 
   editor.addEventListener('beforeinput', (event) => {
