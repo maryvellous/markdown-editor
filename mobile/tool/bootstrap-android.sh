@@ -6,6 +6,7 @@ BUILD_DIR="$ROOT/.mobile-build"
 
 rm -rf "$BUILD_DIR"
 flutter create \
+  --no-pub \
   --platforms=android \
   --org dev.diaspro \
   --project-name diaspro_markdown_mobile \
@@ -16,6 +17,7 @@ rm -f "$BUILD_DIR/analysis_options.yaml"
 cp -R "$ROOT/mobile/lib" "$BUILD_DIR/lib"
 cp -R "$ROOT/mobile/test" "$BUILD_DIR/test"
 cp "$ROOT/mobile/pubspec.yaml" "$BUILD_DIR/pubspec.yaml"
+cp "$ROOT/mobile/pubspec.lock" "$BUILD_DIR/pubspec.lock"
 if [[ -d "$ROOT/mobile/assets" ]]; then
   cp -R "$ROOT/mobile/assets" "$BUILD_DIR/assets"
 fi

@@ -31,7 +31,7 @@ Con Flutter 3.47+ installato:
 ```bash
 bash ./mobile/tool/bootstrap-android.sh
 cd .mobile-build
-flutter pub get
+flutter pub get --enforce-lockfile
 flutter run
 ```
 
@@ -39,7 +39,7 @@ Per l'APK release:
 
 ```bash
 cd .mobile-build
-flutter build apk --release
+flutter build apk --release --no-pub
 ```
 
 ## Release Android

@@ -13,7 +13,9 @@ jobs:
 
     steps:
       - name: Checkout Markdown Editor
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Read version
         id: meta
@@ -25,20 +27,22 @@ jobs:
           if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Tag and package version differ" }
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: lts/*
+          node-version-file: .node-version
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable action
+        with:
+          toolchain: '1.100.0'
 
       - name: Cache Rust
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: ./src-tauri -> target
 
       - name: Install frontend tooling
-        run: npm install
+        run: npm ci
 
       - name: Check frontend syntax
         run: node --check src/app.js
@@ -50,10 +54,16 @@ jobs:
         run: npm run icons
 
       - name: Run Rust rendering tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
 
       - name: Build raw Windows executable
-        run: npm run tauri -- build --no-bundle
+        run: npm run tauri -- build --no-bundle -- --locked
+
+      - name: Verify committed desktop lockfiles are unchanged
+        shell: pwsh
+        run: |
+          git diff --exit-code -- package-lock.json src-tauri/Cargo.lock
+          if ($LASTEXITCODE -ne 0) { throw "Dependency locks changed during build" }
 
       - name: Prepare Diaspro Installer payload
         shell: pwsh
