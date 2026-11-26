@@ -464,13 +464,12 @@ class _EditorHomeState extends State<EditorHome> with WidgetsBindingObserver {
   void _loadDocument(
     Map<String, dynamic> data, {
     required bool addToRecents,
-    bool resetUndo = true,
   }) {
     final content = data['content'] as String? ?? '';
     final uri = data['uri'] as String?;
     final name = data['name'] as String? ?? 'documento.md';
 
-    if (resetUndo) _resetUndoHistory();
+    _resetUndoHistory();
     setState(() {
       _name = name;
       _uri = uri == null || uri.isEmpty ? null : uri;
