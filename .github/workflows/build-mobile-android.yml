@@ -63,6 +63,10 @@ jobs:
         working-directory: .mobile-build
         run: flutter analyze
 
+      - name: Run Flutter regression tests
+        working-directory: .mobile-build
+        run: flutter test
+
       - name: Build release APK
         working-directory: .mobile-build
         run: flutter build apk --release
