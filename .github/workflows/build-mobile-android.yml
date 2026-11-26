@@ -3,6 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [main]
+    tags: ['mobile-v*']
     paths:
       - "mobile/**"
       - ".github/workflows/build-mobile-android.yml"
@@ -14,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: android-release-${{ github.ref }}
@@ -24,6 +25,10 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      apk: ${{ steps.meta.outputs.apk }}
 
     steps:
       - name: Checkout
@@ -51,6 +56,10 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=mobile-v$version" >> "$GITHUB_OUTPUT"
           echo "apk=diaspro-markdown-mobile-$version.apk" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "mobile-v$version" ]]; then
+            echo "Tag and mobile version differ" >&2
+            exit 1
+          fi
 
       - name: Bootstrap Android project
         run: bash ./mobile/tool/bootstrap-android.sh
@@ -82,19 +91,30 @@ jobs:
             ${{ steps.meta.outputs.apk }}.sha256
           if-no-files-found: error
 
+  publish-android:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/mobile-v')
+    needs: build-android
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: diaspro-markdown-mobile-${{ needs.build-android.outputs.version }}
       - name: Publish mobile release
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.meta.outputs.tag }}
-          APK: ${{ steps.meta.outputs.apk }}
-          VERSION: ${{ steps.meta.outputs.version }}
+          TAG: ${{ needs.build-android.outputs.tag }}
+          APK: ${{ needs.build-android.outputs.apk }}
+          VERSION: ${{ needs.build-android.outputs.version }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          gh release delete "$TAG" --cleanup-tag -y || true
+          sha256sum -c "$APK.sha256"
           gh release create "$TAG" \
             "$APK" \
             "$APK.sha256" \
-            --target "$GITHUB_SHA" \
+            --verify-tag \
             --title "Diaspro Markdown Mobile $VERSION" \
             --notes "Release Android stabile di Diaspro Markdown. Include editor e anteprima Markdown, apertura/salvataggio tramite Storage Access Framework, Recenti, guida rapida, layout tablet e icona launcher Diaspro (adaptive/themed sui dispositivi compatibili)."
