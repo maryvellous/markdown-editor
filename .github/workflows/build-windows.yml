@@ -44,7 +44,7 @@ jobs:
         run: node --check src/app.js
 
       - name: Run desktop document regression tests
-        run: node --test tests/document-format.test.mjs
+        run: node --test tests/document-format.test.mjs tests/desktop-modules.test.mjs
 
       - name: Verify local Mermaid runtime
         shell: pwsh
