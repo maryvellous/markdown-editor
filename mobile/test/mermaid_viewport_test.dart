@@ -39,6 +39,14 @@ void main() {
     final controller =
         tester.widget<InteractiveViewer>(viewport).transformationController!;
     final initial = controller.value.clone();
+    // Matrix calculations use floating-point arithmetic; subpixel rounding
+    // must not cause a failure, but every scale/translation component is checked.
+    void expectInitialTransform() {
+      for (var i = 0; i < 16; i++) {
+        expect(controller.value.storage[i], closeTo(initial.storage[i], 1e-6),
+            reason: 'Transform component $i must return to its initial value');
+      }
+    }
     final center = tester.getCenter(viewport);
     await tester.tapAt(center);
     await tester.pump(const Duration(milliseconds: 50));
@@ -49,12 +57,13 @@ void main() {
     final beforePan = controller.value.clone();
     await tester.flingFrom(center, const Offset(-100, -100), 1200);
     await tester.pump(const Duration(milliseconds: 16));
-    expect(controller.value, isNot(equals(beforePan)));
+    final pan = controller.value.getTranslation() - beforePan.getTranslation();
+    expect(pan.length, greaterThan(1.0));
     await tester.tap(find.byTooltip('Adatta alla schermata'));
     await tester.pumpAndSettle();
-    expect(controller.value, equals(initial));
+    expectInitialTransform();
     await tester.pump(const Duration(seconds: 2));
-    expect(controller.value, equals(initial));
+    expectInitialTransform();
     expect(tester.takeException(), isNull);
   });
 }
