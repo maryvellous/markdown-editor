@@ -12,6 +12,10 @@ dependencies:
   flutter_markdown_plus: ^1.0.12
   mermaid_flutter: ^0.3.0
 
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
 flutter:
   uses-material-design: true
   assets:

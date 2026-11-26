@@ -18,3 +18,4 @@ serde = { version = "1", features = ["derive"] }
 rfd = "0.15"
 pulldown-cmark = "0.13"
 ammonia = "4"
+tempfile = "3"

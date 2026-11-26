@@ -1,6 +1,6 @@
 use pulldown_cmark::{html, Options, Parser};
 use serde::Serialize;
-use std::{env, fs, path::{Path, PathBuf}};
+use std::{env, fs, io::Write, path::{Path, PathBuf}};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +39,40 @@ fn document_from_path(path: &Path) -> Result<DocumentPayload, String> {
     })
 }
 
+// Stage the complete new contents beside the target before replacing it.
+fn write_document(path: &Path, content: &str) -> Result<(), String> {
+    fn replace_file(path: &Path, content: &str) -> std::io::Result<()> {
+        let target = match fs::symlink_metadata(path) {
+            Ok(_) => fs::canonicalize(path)?,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => path.to_path_buf(),
+            Err(error) => return Err(error),
+        };
+        let parent = target.parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        let permissions = match fs::metadata(&target) {
+            Ok(metadata) => {
+                if !metadata.is_file() || metadata.permissions().readonly() {
+                    return Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "Documento non scrivibile"));
+                }
+                Some(metadata.permissions())
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(error) => return Err(error),
+        };
+        let mut temporary = tempfile::NamedTempFile::new_in(parent)?;
+        temporary.write_all(content.as_bytes())?;
+        if let Some(permissions) = permissions {
+            temporary.as_file().set_permissions(permissions)?;
+        }
+        temporary.as_file().sync_all()?;
+        temporary.persist(target).map_err(|error| error.error)?;
+        Ok(())
+    }
+    replace_file(path, content)
+        .map_err(|error| format!("Impossibile salvare il file: {error}"))
+}
+
 #[tauri::command]
 fn open_document() -> Result<Option<DocumentPayload>, String> {
     let Some(path) = rfd::FileDialog::new()
@@ -73,8 +107,7 @@ fn startup_document() -> Result<Option<DocumentPayload>, String> {
 #[tauri::command]
 fn save_document(path: String, content: String) -> Result<DocumentPayload, String> {
     let path = normalize_markdown_path(PathBuf::from(path));
-    fs::write(&path, content.as_bytes())
-        .map_err(|error| format!("Impossibile salvare il file: {error}"))?;
+    write_document(&path, &content)?;
     document_from_path(&path)
 }
 
@@ -96,8 +129,7 @@ fn save_document_as(
     };
 
     let path = normalize_markdown_path(path);
-    fs::write(&path, content.as_bytes())
-        .map_err(|error| format!("Impossibile salvare il file: {error}"))?;
+    write_document(&path, &content)?;
     document_from_path(&path).map(Some)
 }
 
@@ -137,7 +169,45 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::render_markdown;
+    use super::{document_from_path, render_markdown, write_document};
+    use std::fs;
+
+    #[test]
+    fn save_replaces_existing_content_without_leaving_temp_files() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("documento.md");
+        fs::write(&path, "vecchio contenuto più lungo").unwrap();
+        write_document(&path, "# caffè 🐈").unwrap();
+        assert_eq!(document_from_path(&path).unwrap().content, "# caffè 🐈");
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn save_creates_new_file_and_refuses_directory_target() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("nuovo.md");
+        write_document(&path, "").unwrap();
+        assert_eq!(fs::read(&path).unwrap(), b"");
+        assert!(write_document(directory.path(), "invalid").is_err());
+        assert!(path.is_file());
+    }
+
+    #[test]
+    fn save_refuses_read_only_target_without_replacing_content() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("protetto.md");
+        fs::write(&path, "originale").unwrap();
+        let mut permissions = fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(true);
+        fs::set_permissions(&path, permissions).unwrap();
+        let result = write_document(&path, "modificato");
+        assert!(result.is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), "originale");
+        // Allow the temporary directory to be removed on Windows.
+        let mut permissions = fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(false);
+        fs::set_permissions(&path, permissions).unwrap();
+    }
 
     #[test]
     fn preserves_mermaid_language_class() {
