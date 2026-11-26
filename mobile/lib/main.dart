@@ -1467,7 +1467,12 @@ class _WideToolbar extends StatelessWidget {
           bottom: BorderSide(color: _lavender.withValues(alpha: 0.16)),
         ),
       ),
-      child: Row(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
           SegmentedButton<EditorMode>(
             segments: const <ButtonSegment<EditorMode>>[
@@ -1490,7 +1495,6 @@ class _WideToolbar extends StatelessWidget {
             selected: <EditorMode>{mode},
             onSelectionChanged: (value) => onModeChanged(value.first),
           ),
-          const Spacer(),
           IconButton(
             tooltip: 'Recenti',
             onPressed: onRecent,
@@ -1501,7 +1505,6 @@ class _WideToolbar extends StatelessWidget {
             onPressed: onGuide,
             icon: const Icon(Icons.menu_book_outlined),
           ),
-          const SizedBox(width: 6),
           TextButton.icon(
             onPressed: onNew,
             icon: const Icon(Icons.note_add_outlined),
@@ -1517,7 +1520,6 @@ class _WideToolbar extends StatelessWidget {
             icon: const Icon(Icons.save_as_outlined),
             label: const Text('Salva con nome'),
           ),
-          const SizedBox(width: 6),
           FilledButton.icon(
             onPressed: onSave,
             icon: const Icon(Icons.save_outlined),
@@ -1551,7 +1553,12 @@ class _StatusBar extends StatelessWidget {
           top: BorderSide(color: _lavender.withValues(alpha: 0.16)),
         ),
       ),
-      child: Row(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1571,7 +1578,6 @@ class _StatusBar extends StatelessWidget {
               ),
             ),
           ),
-          const Spacer(),
           Text(
             '$wordCount ${wordCount == 1 ? 'parola' : 'parole'} · '
             '$charCount ${charCount == 1 ? 'carattere' : 'caratteri'}',
