@@ -1299,6 +1299,7 @@ class _MermaidFullscreenPage extends StatefulWidget {
 
 class _MermaidFullscreenPageState extends State<_MermaidFullscreenPage> {
   final TransformationController _transform = TransformationController();
+  int _viewportRevision = 0;
 
   @override
   void dispose() {
@@ -1307,7 +1308,9 @@ class _MermaidFullscreenPageState extends State<_MermaidFullscreenPage> {
   }
 
   void _resetView() {
+    // Recreate the gesture surface to cancel any pending pan/scale inertia.
     _transform.value = Matrix4.identity();
+    setState(() => _viewportRevision++);
   }
 
   void _toggleZoom() {
@@ -1347,6 +1350,7 @@ class _MermaidFullscreenPageState extends State<_MermaidFullscreenPage> {
               behavior: HitTestBehavior.opaque,
               onDoubleTap: _toggleZoom,
               child: InteractiveViewer(
+                key: ValueKey(_viewportRevision),
                 transformationController: _transform,
                 minScale: 1,
                 maxScale: 8,
@@ -1358,23 +1362,28 @@ class _MermaidFullscreenPageState extends State<_MermaidFullscreenPage> {
                   height: constraints.maxHeight,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: MermaidView(
-                      source: widget.source,
-                      theme: mermaidTheme,
-                      backgroundColor: Colors.white,
-                      showControls: false,
-                      allowFullscreen: false,
-                      semanticNodes: true,
-                      errorBuilder: (context, error) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            'Diagramma Mermaid non valido:\n$error',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFF6E3945),
-                              fontFamily: 'monospace',
-                              fontSize: 13,
+                    // MermaidView fits the diagram itself; only the outer viewer
+                    // may handle pan/zoom gestures. Hidden controls alone do not
+                    // disable MermaidView's internal gestures.
+                    child: AbsorbPointer(
+                      child: MermaidView(
+                        source: widget.source,
+                        theme: mermaidTheme,
+                        backgroundColor: Colors.white,
+                        showControls: false,
+                        allowFullscreen: false,
+                        semanticNodes: true,
+                        errorBuilder: (context, error) => Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'Diagramma Mermaid non valido:\n$error',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFF6E3945),
+                                fontFamily: 'monospace',
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ),
