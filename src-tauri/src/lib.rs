@@ -148,6 +148,12 @@ fn render_markdown(markdown: String) -> String {
 
     let mut sanitizer = ammonia::Builder::default();
     sanitizer.add_tag_attributes("code", &["class"]);
+    // Task list markers are read-only in the preview. Never permit active
+    // form controls or arbitrary input attributes from Markdown HTML.
+    sanitizer.add_tags(&["input"]);
+    sanitizer.add_tag_attributes("input", &["checked"]);
+    sanitizer.set_tag_attribute_value("input", "type", "checkbox");
+    sanitizer.set_tag_attribute_value("input", "disabled", "");
     sanitizer.clean(&rendered).to_string()
 }
 
@@ -217,6 +223,34 @@ mod tests {
 
         assert!(rendered.contains("class=\"language-mermaid\""));
         assert!(rendered.contains("graph TD"));
+    }
+
+    #[test]
+    fn task_lists_render_checked_and_unchecked_disabled_checkboxes() {
+        let rendered = render_markdown("- [x] Fatto\n- [ ] Da fare\n".to_string());
+        let inputs: Vec<_> = rendered.split('<')
+            .filter(|part| part.starts_with("input "))
+            .map(|part| part.split('>').next().unwrap())
+            .collect();
+        assert_eq!(inputs.len(), 2, "{rendered}");
+        for input in &inputs {
+            assert!(input.contains("type=\"checkbox\""), "{input}");
+            assert!(input.contains("disabled=\"\""), "{input}");
+        }
+        assert!(inputs[0].contains("checked=\"\""), "{rendered}");
+        assert!(!inputs[1].contains("checked="), "{rendered}");
+    }
+
+    #[test]
+    fn raw_input_cannot_enable_interaction_or_unsafe_attributes() {
+        let rendered = render_markdown(
+            "<input type=\"file\" autofocus onchange=\"alert(1)\" form=\"other\" name=\"secret\">".to_string()
+        );
+        assert!(rendered.contains("type=\"checkbox\""), "{rendered}");
+        assert!(rendered.contains("disabled=\"\""), "{rendered}");
+        for attribute in ["autofocus", "onchange", "form=", "name=", "type=\"file\""] {
+            assert!(!rendered.contains(attribute), "{rendered}");
+        }
     }
 
     #[test]
