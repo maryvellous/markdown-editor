@@ -111,6 +111,25 @@ jobs:
           ANDROID_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
         run: bash mobile/tool/verify-release-apk.sh "${{ steps.meta.outputs.apk }}" "${{ steps.meta.outputs.version }}" "${{ steps.meta.outputs.build }}"
 
+      - name: Exercise signing with a disposable test key
+        if: github.event_name == 'pull_request'
+        run: bash mobile/tool/test-release-signing.sh "${{ steps.meta.outputs.apk }}" "${{ steps.meta.outputs.version }}" "${{ steps.meta.outputs.build }}"
+
+      - name: Inspect previously published APK certificate
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          gh release download mobile-v1.1.1 --pattern diaspro-markdown-mobile-1.1.1.apk --dir "$work"
+          sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          tools="$(find "$sdk/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          echo "Previously published APK signing certificate:"
+          "$tools/apksigner" verify --verbose --print-certs "$work/diaspro-markdown-mobile-1.1.1.apk"
+
       - name: Write APK checksum
         run: sha256sum "${{ steps.meta.outputs.apk }}" > "${{ steps.meta.outputs.apk }}.sha256"
 
