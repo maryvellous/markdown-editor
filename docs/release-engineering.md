@@ -6,7 +6,7 @@ Desktop and Android have independent version numbers and tags. Current published
 - One workflow builds and tests the same installer for PR, main and explicit `v<version>` tags. The publish job runs only for tags after build success, downloads the exact checked artifact, and verifies SHA-256 again.
 - Desktop version must match package.json, npm lock root, Cargo manifest/lock, Tauri and installer config.
 - CI smoke test performs silent installation on a disposable runner, checks installed executable checksum and both HKCU associations, uninstalls and verifies removal and an external document sentinel.
-- This is not an upgrade test or a visual test. The current Inno generator does not implement the NSIS ShellNew hook; verify/restore that feature before claiming support in the released installer.
+- The vendored Inno generator now supports opt-in ShellNew for .md, OpenWith registration and preservation of existing defaults. Smoke checks inspect registry values and cleanup. This is not an upgrade test or a visual test: verify Explorer's actual New menu and legacy installer upgrades separately.
 - Windows Authenticode signing is not configured by this change. SHA-256 verifies integrity, not publisher identity.
 
 ## Android

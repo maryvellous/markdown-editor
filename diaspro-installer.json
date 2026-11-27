@@ -14,7 +14,8 @@
         "extensions": ["md", "markdown"],
         "name": "Documento Markdown",
         "description": "Documento Markdown",
-        "progId": "dev.diaspro.markdown.document"
+        "progId": "dev.diaspro.markdown.document",
+        "shellNew": ["md"]
       }
     ]
   },

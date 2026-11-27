@@ -4,6 +4,8 @@ Questa cartella contiene la copia minima del runtime necessario alle build Windo
 
 Sorgente canonica: `maryvellous/diaspro-installer`.
 
+Commit sorgente: [`95e625a70f35d3b7f00bbccf8b5729f686ef3684`](https://github.com/maryvellous/diaspro-installer/commit/95e625a70f35d3b7f00bbccf8b5729f686ef3684) (PR #6, supporto ShellNew).
+
 I file vendorizzati sono:
 - `build.ps1`
 - `installer/diaspro-installer.iss`
