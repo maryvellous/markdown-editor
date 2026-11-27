@@ -44,7 +44,7 @@ Se un file recente è stato spostato o eliminato, al tentativo di apertura viene
 
 ## Integrazione Windows
 
-L'installer Diaspro (Inno Setup) pubblicato dalla CI registra le associazioni `.md` e `.markdown` per l'utente corrente. Il bundle NSIS di sviluppo contiene anche un hook `ShellNew` per `.md`; questa funzione non è attualmente inclusa nel generatore Inno e va verificata separatamente.
+L'installer Diaspro (Inno Setup) pubblicato dalla CI registra le associazioni `.md` e `.markdown` per l'utente corrente. Il generatore Inno include il supporto opzionale `ShellNew` per `.md`, creando un file vuoto dal menu **Nuovo → Documento Markdown** se non esiste già una definizione di un altro programma. Non modifica l'editor predefinito se già presente. La visibilità effettiva del menu su Windows e gli aggiornamenti da installer precedenti richiedono il collaudo finale.
 
 Windows può richiedere una scelta esplicita dell'utente per cambiare l'app predefinita se `.md` è già associato a un altro programma. In quel caso basta usare una volta **Apri con → Diaspro Markdown → Sempre**.
 

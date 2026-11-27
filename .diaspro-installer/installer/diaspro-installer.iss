@@ -40,6 +40,7 @@ WizardStyle=modern light excludelightcontrols hidebevels
 WizardImageFile=
 WizardSmallImageFile=
 
+ChangesAssociations=yes
 CloseApplications=yes
 RestartApplications=no
 SetupLogging=yes

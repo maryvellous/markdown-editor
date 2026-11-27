@@ -308,6 +308,8 @@ if (Test-Path -LiteralPath $buildDirectory) {
 
 $associationsPath = Join-Path $buildDirectory "file-associations.iss"
 $associationLines = [System.Collections.Generic.List[string]]::new()
+$registerCalls = [System.Collections.Generic.List[string]]::new()
+$unregisterCalls = [System.Collections.Generic.List[string]]::new()
 
 if ($fileAssociations.Count -gt 0) {
   $associationLines.Add("[Registry]")
@@ -317,6 +319,13 @@ if ($fileAssociations.Count -gt 0) {
     $associationDescription = [string](Get-OptionalProperty -Object $association -Name "description" -Default $associationName)
     $associationProgId = [string](Get-OptionalProperty -Object $association -Name "progId" -Default ($appId + ".file"))
     $extensions = @(Get-OptionalProperty -Object $association -Name "extensions" -Default @())
+    $shellNewExtensions = @(Get-OptionalProperty -Object $association -Name "shellNew" -Default @() | ForEach-Object { '.' + ([string]$_).TrimStart('.') })
+    $normalizedExtensions = @($extensions | ForEach-Object { '.' + ([string]$_).TrimStart('.') })
+    foreach ($shellNewExtension in $shellNewExtensions) {
+      if ($shellNewExtension -notin $normalizedExtensions) {
+        throw "shellNew deve contenere solo estensioni dichiarate in extensions: $shellNewExtension"
+      }
+    }
 
     if ($extensions.Count -eq 0) {
       throw "Ogni app.fileAssociations[] deve contenere almeno una estensione."
@@ -352,15 +361,85 @@ if ($fileAssociations.Count -gt 0) {
       }
 
       $associationLines.Add(
-        'Root: HKA; Subkey: ' + (Quote-InnoString ("Software\Classes\" + $extension)) +
-        '; ValueType: string; ValueName: ""; ValueData: ' + (Quote-InnoString $associationProgId) +
-        '; Flags: uninsdeletevalue'
+        'Root: HKA; Subkey: ' + (Quote-InnoString ("Software\Classes\" + $extension + "\OpenWithProgids")) +
+        '; ValueType: string; ValueName: ' + (Quote-InnoString $associationProgId) +
+        '; ValueData: ""; Flags: uninsdeletevalue uninsdeletekeyifempty'
       )
+      $extPascal = $extension.Replace("'", "''")
+      $progPascal = $associationProgId.Replace("'", "''")
+      $newFile = if ($extension -in $shellNewExtensions) { "True" } else { "False" }
+      $registerCalls.Add("    RegisterOwnedAssociation('$extPascal', '$progPascal', $newFile);")
+      $unregisterCalls.Add("    UnregisterOwnedAssociation('$extPascal', '$progPascal');")
     }
   }
 }
 
 [System.IO.File]::WriteAllLines($associationsPath, [string[]]$associationLines, [System.Text.UTF8Encoding]::new($false))
+
+$associationCodePath = Join-Path $buildDirectory "association-code.iss"
+$associationCode = @"
+[Code]
+procedure RegisterOwnedAssociation(Ext, ProgId: String; NewFile: Boolean);
+var
+  Key, NewKey: String;
+begin
+  Key := 'Software\Classes\' + Ext;
+  NewKey := Key + '\ShellNew';
+  if not RegValueExists(HKCR, Ext, '') then
+    if not RegWriteStringValue(HKA, Key, '', ProgId) then
+      RaiseException('Cannot register file association ' + Ext);
+  { Never replace existing ShellNew definitions, even in the other registry scope. }
+  if NewFile and not RegKeyExists(HKCR, Ext + '\ShellNew') then
+  begin
+    if not RegWriteStringValue(HKA, NewKey, 'DiasproOwner', ProgId) then
+      RaiseException('Cannot register ShellNew owner for ' + Ext);
+    if not RegWriteStringValue(HKA, NewKey, 'NullFile', '') then
+    begin
+      RegDeleteValue(HKA, NewKey, 'DiasproOwner');
+      RegDeleteKeyIfEmpty(HKA, NewKey);
+      RaiseException('Cannot register ShellNew for ' + Ext);
+    end;
+  end;
+end;
+
+procedure UnregisterOwnedAssociation(Ext, ProgId: String);
+var
+  Key, NewKey, Owner, Value: String;
+begin
+  Key := 'Software\Classes\' + Ext;
+  NewKey := Key + '\ShellNew';
+  if RegQueryStringValue(HKA, NewKey, 'DiasproOwner', Owner) and (Owner = ProgId) then
+  begin
+    if RegQueryStringValue(HKA, NewKey, 'NullFile', Value) and (Value = '') then
+      RegDeleteValue(HKA, NewKey, 'NullFile');
+    RegDeleteValue(HKA, NewKey, 'DiasproOwner');
+    RegDeleteKeyIfEmpty(HKA, NewKey);
+  end;
+  { Do not remove a different editor selected after installation. }
+  if RegQueryStringValue(HKA, Key, '', Value) and (Value = ProgId) then
+    RegDeleteValue(HKA, Key, '');
+  RegDeleteKeyIfEmpty(HKA, Key);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    Log('Registering optional file associations');
+$($registerCalls -join "`n")
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    Log('Removing owned file association values');
+$($unregisterCalls -join "`n")
+  end;
+end;
+"@
+[System.IO.File]::WriteAllText($associationCodePath, $associationCode, [System.Text.UTF8Encoding]::new($false))
 
 $definesPath = Join-Path $buildDirectory "app-defines.iss"
 $defines = @(
@@ -391,12 +470,14 @@ $wrapperPath = Join-Path $buildDirectory "build.iss"
 $definesForInclude = $definesPath.Replace('"', '""')
 $templateForInclude = $templatePath.Replace('"', '""')
 $associationsForInclude = $associationsPath.Replace('"', '""')
+$associationCodeForInclude = $associationCodePath.Replace('"', '""')
 
 $wrapper = @"
 #preproc ispp
 #include "$definesForInclude"
 #include "$templateForInclude"
 #include "$associationsForInclude"
+#include "$associationCodeForInclude"
 "@
 Set-Content -LiteralPath $wrapperPath -Value $wrapper -Encoding UTF8
 
