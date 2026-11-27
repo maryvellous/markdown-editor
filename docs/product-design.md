@@ -1,0 +1,37 @@
+# Diaspro Markdown — specifica progettuale
+
+Questo documento è il riferimento per le decisioni di prodotto. Descrive il progetto effettivo e le ragioni progettuali ricostruite dalle scelte implementate; non costituisce una ricerca utente o una certificazione prestazionale.
+
+## Problema e perimetro
+Il prodotto risponde alla necessità di scrivere e consultare documenti Markdown senza adottare una piattaforma di produttività completa. Il documento è un normale file e non un'entità vincolata a un database dell'app. Le operazioni centrali sono creare, aprire, modificare, salvare e leggere. Nessun account, backend remoto o abbonamento è necessario per la funzione centrale. Sincronizzazione e organizzazione delle cartelle sono demandate agli strumenti scelti dall'utente. Non sono obiettivi attuali collaborazione in tempo reale, plugin, gestione di database o editor WYSIWYG. L'esclusione limita la complessità del prodotto e i costi di manutenzione.
+
+## Modello d'interazione
+- **Scrivi:** solo testo sorgente, massima superficie disponibile e minori distrazioni.
+- **Affianca:** sorgente e anteprima visibili contemporaneamente, feedback immediato sulla sintassi.
+- **Leggi:** documento interpretato, senza necessità di leggere il codice sorgente.
+
+Le etichette sono verbi italiani legati all'intenzione. Il testo è sempre la fonte del documento; l'anteprima è una rappresentazione derivata, non un secondo editor. Le azioni di file sono separate dalle modalità. Su desktop Recenti e Guida sono pannelli laterali indipendenti, mutuamente esclusivi e richiudibili. Il workspace resta prioritario. Nome e percorso identificano il documento; stato di salvataggio, contatori e messaggi rendono osservabile il comportamento. Undo/Redo è disponibile tramite controlli e, sul desktop, scorciatoie; l'annullamento conserva anche la selezione.
+
+## Apprendimento progressivo
+La guida Markdown mostra la sintassi e la inserisce nel testo, adattandosi a selezione e cursore, tramite prefissi, delimitatori o snippet con segnaposto. L'obiettivo è ridurre la necessità di memorizzare i comandi senza nascondere il formato dietro un editor proprietario. L'utente può trasferire ciò che impara ad altri programmi compatibili. Recenti è una scorciatoia limitata a otto documenti, non un archivio o un sistema di classificazione.
+
+## Identità visiva
+La palette comune Diaspro distingue l'ambiente operativo scuro (canvas #1E1333, superfici #2B1C47) dal documento chiaro (paper #F4ECD9). L'anteprima richiama la carta e separa visivamente testo sorgente e risultato. Plum #7A3F67 evidenzia le azioni, Lavender #9D85C6 bordi e accenti, Sand #E8D19E attenzione, Blue #A5C4DC informazioni secondarie, Sage #98A78A conferma. Il colore è accompagnato da etichette, non costituisce l'unico feedback. L'icona è condivisa tra piattaforme. Le famiglie CSS Outfit, Inter e JetBrains Mono sono preferenze con fallback; non sono asset incorporati. Android usa la tipografia Flutter e monospace per l'editor. La titlebar desktop personalizzata mantiene le operazioni convenzionali della finestra; la coerenza estetica comporta anche la responsabilità di testarne i comportamenti nativi. Non è stato eseguito un audit completo di accessibilità.
+
+## Adattamento per piattaforma
+Windows parte in modalità Affianca, con toolbar, rail laterale e comandi da tastiera. Android parte in Scrivi, usa due destinazioni nella barra inferiore su telefono, bottom sheet per Guida e Recenti, e un accesso rapido alla Guida durante la scrittura. Da 700 pixel logici di larghezza consente il layout a due colonne. Su telefono una divisione permanente ridurrebbe leggibilità e precisione dell'input. I file sono aperti tramite dialoghi di sistema Windows o Storage Access Framework Android; il bridge Android riceve anche Apri con/Condividi. La coerenza è concettuale, non una duplicazione letterale dell'interfaccia.
+
+## Diagrammi Mermaid
+Un diagramma è testo dentro un blocco Markdown, coerente con la portabilità del documento. Il viewer separa la lettura contestuale dall'esplorazione dettagliata: mouse/zoom/pan su desktop, gesture touch su mobile. Il renderer desktop è locale e usa un limite di cache di 24 diagrammi, impostazioni restrittive e controllo delle risposte obsolete. Un diagramma invalido viene segnalato senza modificare il sorgente. Le implementazioni di rendering differiscono: non promettere parità assoluta tra piattaforme o supporto a ogni possibile sintassi Mermaid.
+
+## Architettura e compromessi
+Windows: Tauri 2, WebView di sistema, HTML/CSS/JavaScript nativi, Rust per operazioni file e rendering Markdown con sanitizzazione. Android: Flutter/Dart per UI e stato, Kotlin e MethodChannel per accesso ai documenti, rendering tramite flutter_markdown_plus e mermaid_flutter. Gli stack sono proporzionati alle rispettive piattaforme. Due codebase implicano manutenzione e verifiche distinte, in cambio di adattamento alle API e ai modelli di interazione. I refactoring modulari mantengono i contratti esistenti senza introdurre nuovi framework. Riferimenti: [desktop](desktop-architecture.md), [Android](android-architecture.md).
+
+## Affidabilità come requisito UX
+La perdita di testo è un difetto prioritario. Il sistema confronta il contenuto corrente con la versione salvata, protegge l'abbandono di modifiche, serializza le operazioni sui documenti e conferma esattamente lo snapshot scritto, lasciando intatte le modifiche successive. Windows preserva terminatori di riga e usa un file temporaneo prima della sostituzione; Android dipende dal comportamento del provider SAF e non garantisce scritture atomiche. I recenti Android conservano una copia locale dell'ultima versione conosciuta, non un backup completo di ogni modifica. Il codice sorgente Markdown non deve diventare HTML eseguibile: su desktop il renderer sanitizza l'HTML e le checkbox sono disabilitate. Le misure non costituiscono un audit di sicurezza completo.
+
+## Risorse e manutenzione
+L'obiettivo di leggerezza motiva il WebView di sistema e la limitazione di dipendenze e lavoro inutile: rendering desktop differito di 120 ms, sospensione dell'anteprima nascosta, cache limitata e cronologia Undo/Redo fino a 120 snapshot con raggruppamento delle digitazioni. Sono scelte architetturali, non risultati di benchmark. Lockfile, test di regressione e versioni degli strumenti consentono di verificare cambiamenti con minore incertezza. Il sistema di distribuzione è parte del prodotto: installazione per utente corrente, integrazione con i file, APK firmato stabilmente, pubblicazione soltanto su tag espliciti.
+
+## Evoluzione e criteri per modifiche future
+Le PR iniziali documentano la definizione del prodotto (1), guida e recenti (2), contrasto (3), architettura informativa (4), titlebar (5), Android (6–8), Mermaid e undo/redo desktop (9). La serie 10–19 consolida integrità, test, moduli e distribuzione. Prima di aggiungere una funzionalità, esplicitare il bisogno, il costo in superficie UI, le conseguenze per il formato aperto e la manutenzione su entrambe le piattaforme. Preferire manutenzione e correzioni alle espansioni del perimetro non motivate. Non dichiarare verifiche fisiche, performance, accessibilità, ricerca utente o compatibilità degli aggiornamenti senza evidenze. Il repository pubblico non contiene ancora una licenza esplicita: non descriverlo come open source in senso giuridico senza una decisione del titolare.

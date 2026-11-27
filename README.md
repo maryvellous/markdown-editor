@@ -1,6 +1,18 @@
 # Diaspro Markdown
 
-Piccolo editor desktop per file Markdown, pensato per essere rapido da aprire e semplice da usare come lettore ed editor quotidiano su Windows.
+Editor Markdown locale per Windows e Android, pensato per essere rapido da aprire e semplice da usare come lettore ed editor quotidiano. I documenti rimangono normali file, indipendenti dall'applicazione.
+
+**Stato:** versioni pubblicate Windows 0.4.1 e Android 1.1.1; sorgenti in preparazione per Windows 0.4.2 e Android 1.1.2+5. Le build candidate non sono ancora release pubbliche.
+
+## Documentazione
+
+- [Scelte progettuali e UX](docs/product-design.md)
+- [Architettura desktop](docs/desktop-architecture.md) · [Architettura Android](docs/android-architecture.md)
+- [Versione Android](mobile/README.md) · [Changelog](CHANGELOG.md)
+- [Dipendenze e toolchain](docs/dependency-management.md)
+- [Release engineering](docs/release-engineering.md) · [Collaudo finale](docs/release-validation.md) · [Firma Android](docs/android-signing-setup.md)
+
+Le funzionalità e la UI descritte qui sotto riguardano in particolare Windows.
 
 ## Cosa fa
 
@@ -40,7 +52,7 @@ Il rendering Markdown avviene nel backend Rust e l'HTML risultante viene sanitiz
 
 La cronologia contiene al massimo 8 percorsi ed è salvata localmente nel WebView tramite `localStorage`. Non viene usato alcun database.
 
-Se un file recente è stato spostato o eliminato, al tentativo di apertura viene rimosso automaticamente dall'elenco.
+I percorsi recenti vengono conservati senza copiare il contenuto del documento. Se un percorso non è più accessibile, l'apertura restituisce un errore; la cronologia può essere pulita manualmente.
 
 ## Integrazione Windows
 
