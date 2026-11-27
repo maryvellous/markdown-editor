@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
@@ -13,6 +14,8 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Checkout Markdown Editor
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -30,6 +33,9 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: .node-version
+
+      - name: Verify version consistency
+        run: node tools/check-desktop-version.mjs
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable action
@@ -101,9 +107,46 @@ jobs:
           if ($setup.Length -lt 100000) { throw "Installer troppo piccolo: $($setup.Length) byte" }
           Write-Host "Diaspro Markdown installer: $($setup.FullName) - $($setup.Length) byte"
 
+      - name: Smoke test clean install and uninstall
+        shell: pwsh
+        run: ./tools/smoke-windows-installer.ps1 -SetupPath "dist-installer/Diaspro-Markdown-${{ steps.meta.outputs.version }}-Setup.exe" -PayloadPath ".release-payload/Diaspro Markdown.exe"
+
+      - name: Write installer checksum
+        shell: pwsh
+        run: |
+          $asset = Get-Item ".\dist-installer\Diaspro-Markdown-${{ steps.meta.outputs.version }}-Setup.exe"
+          $hash = (Get-FileHash -Algorithm SHA256 $asset.FullName).Hash.ToLowerInvariant()
+          "$hash  $($asset.Name)" | Set-Content -Encoding ascii "$($asset.FullName).sha256"
+
       - name: Upload Windows installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: diaspro-markdown-windows
-          path: dist-installer/Diaspro-Markdown-${{ steps.meta.outputs.version }}-Setup.exe
+          path: |
+            dist-installer/Diaspro-Markdown-${{ steps.meta.outputs.version }}-Setup.exe
+            dist-installer/Diaspro-Markdown-${{ steps.meta.outputs.version }}-Setup.exe.sha256
           if-no-files-found: error
+
+  publish-windows:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified installer
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: diaspro-markdown-windows
+      - name: Publish Windows release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.build-windows.outputs.version }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          asset="Diaspro-Markdown-$VERSION-Setup.exe"
+          sha256sum -c "$asset.sha256"
+          gh release create "$TAG" "$asset" "$asset.sha256" --verify-tag \
+            --title "Diaspro Markdown $VERSION" --generate-notes --latest

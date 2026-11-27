@@ -44,7 +44,7 @@ Se un file recente è stato spostato o eliminato, al tentativo di apertura viene
 
 ## Integrazione Windows
 
-Il bundle NSIS dichiara l'associazione ai file `.md` e `.markdown`. L'hook dell'installer aggiunge inoltre `ShellNew` per `.md`, così **tasto destro → Nuovo → Documento Markdown** crea il file e Windows può passarlo direttamente a Diaspro Markdown.
+L'installer Diaspro (Inno Setup) pubblicato dalla CI registra le associazioni `.md` e `.markdown` per l'utente corrente. Il bundle NSIS di sviluppo contiene anche un hook `ShellNew` per `.md`; questa funzione non è attualmente inclusa nel generatore Inno e va verificata separatamente.
 
 Windows può richiedere una scelta esplicita dell'utente per cambiare l'app predefinita se `.md` è già associato a un altro programma. In quel caso basta usare una volta **Apri con → Diaspro Markdown → Sempre**.
 
@@ -71,9 +71,9 @@ npm ci
 npm run build -- --locked
 ```
 
-La build genera l'installer NSIS in `src-tauri/target/release/bundle/nsis/`.
+Il comando locale genera il bundle NSIS in `src-tauri/target/release/bundle/nsis/`. Il workflow GitHub Actions **Build Windows** usa invece l'eseguibile Tauri e il generatore Inno Setup Diaspro, verifica installazione e rimozione in CI e carica installer e checksum SHA-256. Lo stesso workflow pubblica una release solo su tag esplicito `v<versione>`.
 
-Il workflow GitHub Actions **Build Windows** esegue la stessa build su Windows e pubblica l'installer come artifact scaricabile dalla run.
+Procedura e collaudi: [release engineering](docs/release-engineering.md).
 
 ## Struttura
 

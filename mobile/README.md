@@ -44,12 +44,8 @@ flutter build apk --release --no-pub
 
 ## Release Android
 
-La GitHub Action **Build Android APK** esegue bootstrap, `flutter analyze`, build release e checksum SHA-256. La versione viene letta da `mobile/pubspec.yaml`.
+La GitHub Action **Build Android APK** esegue bootstrap, analisi, test, build APK, verifica firma e identità del pacchetto, e checksum SHA-256. La versione e il build number derivano da `mobile/pubspec.yaml`.
 
-Per la release stabile **1.0.0**, la pipeline pubblica:
+Le build CI di PR/main sono artefatti di test, non aggiornamenti pubblici. Un tag esplicito `mobile-v<versione>` abilita la firma con una chiave stabile approvata e la pubblicazione solo se la verifica del certificato riesce. Senza configurazione della chiave, la release fallisce intenzionalmente.
 
-- `diaspro-markdown-mobile-1.0.0.apk`;
-- `diaspro-markdown-mobile-1.0.0.apk.sha256`;
-- tag GitHub `mobile-v1.0.0`.
-
-L'APK prodotto dalla pipeline è pensato per installazione diretta/sideload. Per una distribuzione Play Store o per una catena di aggiornamenti firmati con chiave privata stabile va configurato in seguito un keystore di release custodito nei GitHub Secrets.
+Prima della prima release con firma stabile, confrontare il certificato dell'APK già distribuito; un cambio di chiave può impedire aggiornamenti in-place. Vedere [release engineering](../docs/release-engineering.md).
