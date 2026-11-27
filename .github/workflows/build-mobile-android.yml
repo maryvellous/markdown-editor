@@ -13,6 +13,11 @@ on:
       - "mobile/**"
       - ".github/workflows/build-mobile-android.yml"
   workflow_dispatch:
+    inputs:
+      sign_candidate:
+        description: 'Sign a test candidate with the approved release key (main only; no publication)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -54,7 +59,9 @@ jobs:
         shell: bash
         run: |
           raw_version="$(awk '/^version:/ {print $2; exit}' mobile/pubspec.yaml)"
+          if [[ ! "$raw_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$ ]]; then echo "Invalid Android version/build number" >&2; exit 1; fi
           version="${raw_version%%+*}"
+          echo "build=${raw_version##*+}" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=mobile-v$version" >> "$GITHUB_OUTPUT"
           echo "apk=diaspro-markdown-mobile-$version.apk" >> "$GITHUB_OUTPUT"
@@ -62,6 +69,10 @@ jobs:
             echo "Tag and mobile version differ" >&2
             exit 1
           fi
+
+      - name: Reject signed candidate outside main
+        if: github.event_name == 'workflow_dispatch' && inputs.sign_candidate && github.ref != 'refs/heads/main'
+        run: exit 1
 
       - name: Bootstrap Android project
         run: bash ./mobile/tool/bootstrap-android.sh
@@ -89,7 +100,38 @@ jobs:
         shell: bash
         run: |
           cp .mobile-build/build/app/outputs/flutter-apk/app-release.apk "${{ steps.meta.outputs.apk }}"
-          sha256sum "${{ steps.meta.outputs.apk }}" > "${{ steps.meta.outputs.apk }}.sha256"
+
+      - name: Sign approved candidates and verify APK identity
+        env:
+          SIGN_RELEASE_APK: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) }}
+          ANDROID_RELEASE_KEYSTORE_B64: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_KEYSTORE_B64 || '' }}
+          ANDROID_RELEASE_STORE_PASSWORD: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_STORE_PASSWORD || '' }}
+          ANDROID_RELEASE_KEY_PASSWORD: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_KEY_PASSWORD || '' }}
+          ANDROID_RELEASE_KEY_ALIAS: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_KEY_ALIAS || '' }}
+          ANDROID_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
+        run: bash mobile/tool/verify-release-apk.sh "${{ steps.meta.outputs.apk }}" "${{ steps.meta.outputs.version }}" "${{ steps.meta.outputs.build }}"
+
+      - name: Exercise signing with a disposable test key
+        if: github.event_name == 'pull_request'
+        run: bash mobile/tool/test-release-signing.sh "${{ steps.meta.outputs.apk }}" "${{ steps.meta.outputs.version }}" "${{ steps.meta.outputs.build }}"
+
+      - name: Inspect previously published APK certificate
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          gh release download mobile-v1.1.1 --pattern diaspro-markdown-mobile-1.1.1.apk --dir "$work"
+          sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          tools="$(find "$sdk/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          echo "Previously published APK signing certificate:"
+          "$tools/apksigner" verify --verbose --print-certs "$work/diaspro-markdown-mobile-1.1.1.apk"
+
+      - name: Write APK checksum
+        run: sha256sum "${{ steps.meta.outputs.apk }}" > "${{ steps.meta.outputs.apk }}.sha256"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -126,4 +168,4 @@ jobs:
             "$APK.sha256" \
             --verify-tag \
             --title "Diaspro Markdown Mobile $VERSION" \
-            --notes "Release Android stabile di Diaspro Markdown. Include editor e anteprima Markdown, apertura/salvataggio tramite Storage Access Framework, Recenti, guida rapida, layout tablet e icona launcher Diaspro (adaptive/themed sui dispositivi compatibili)."
+            --generate-notes
