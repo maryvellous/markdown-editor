@@ -116,7 +116,7 @@ jobs:
         run: |
           $asset = Get-Item ".\dist-installer\Diaspro-Markdown-${{ steps.meta.outputs.version }}-Setup.exe"
           $hash = (Get-FileHash -Algorithm SHA256 $asset.FullName).Hash.ToLowerInvariant()
-          "$hash  $($asset.Name)" | Set-Content -Encoding ascii "$($asset.FullName).sha256"
+          [System.IO.File]::WriteAllText("$($asset.FullName).sha256", "$hash  $($asset.Name)`n", [System.Text.Encoding]::ASCII)
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

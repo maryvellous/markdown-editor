@@ -13,7 +13,7 @@ Desktop and Android have independent version numbers and tags. Current published
 - PR/main builds remain test APKs; verify package ID, version name/code and APK signature. Do not confuse them with upgrade-compatible release artifacts.
 - Tags require a stable, approved keystore, alias and passwords configured as GitHub secrets: ANDROID_RELEASE_KEYSTORE_B64, ANDROID_RELEASE_STORE_PASSWORD, ANDROID_RELEASE_KEY_PASSWORD, ANDROID_RELEASE_KEY_ALIAS. Set repository variable ANDROID_RELEASE_CERT_SHA256 to the approved SHA-256 certificate fingerprint (public metadata). No signing credentials belong in git, chat or logs.
 - Recover/compare the previously distributed APK certificate first (apksigner verify --print-certs). If the matching private key is unavailable, a new signing identity is a deliberate migration: Android generally rejects in-place updates signed with another certificate. Back up documents before any uninstall, account for local recent snapshots and SAF grants, and explicitly approve migration.
-- Increase both Android versionName and versionCode for the next public version. Build a signed candidate with the approved key and test upgrade from the actual previously distributed APK before public release. Tag publication is blocked without stable signing configuration.
+- Increase both Android versionName and versionCode for the next public version. Run the Android workflow manually on main with `sign_candidate` enabled (no publication), download the signed candidate, and test upgrade from the actual previously distributed APK before public release. Tag publication is blocked without stable signing configuration.
 - Both workflows publish checksum assets and do not overwrite an existing release.
 
 ## Release checklist (not completed by CI alone)

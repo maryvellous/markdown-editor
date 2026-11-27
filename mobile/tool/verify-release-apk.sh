@@ -7,7 +7,7 @@ sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 if [[ -z "$sdk" ]]; then echo "Android SDK not configured" >&2; exit 1; fi
 tools="$(find "$sdk/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
 [[ -x "$tools/apksigner" && -x "$tools/aapt" ]]
-if [[ "${GITHUB_REF:-}" == refs/tags/mobile-v* ]]; then
+if [[ "${GITHUB_REF:-}" == refs/tags/mobile-v* || "${SIGN_RELEASE_APK:-false}" == true ]]; then
   : "${ANDROID_RELEASE_KEYSTORE_B64:?Configure the approved stable signing keystore}"
   : "${ANDROID_RELEASE_STORE_PASSWORD:?Missing signing store password}"
   : "${ANDROID_RELEASE_KEY_PASSWORD:?Missing signing key password}"
@@ -24,12 +24,15 @@ if [[ "${GITHUB_REF:-}" == refs/tags/mobile-v* ]]; then
 fi
 certs="$("$tools/apksigner" verify --verbose --print-certs "$apk")"
 printf '%s\n' "$certs"
-if [[ "${GITHUB_REF:-}" == refs/tags/mobile-v* ]]; then
+if [[ "${GITHUB_REF:-}" == refs/tags/mobile-v* || "${SIGN_RELEASE_APK:-false}" == true ]]; then
   actual="$(printf '%s\n' "$certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')"
   expected="$(printf '%s' "$ANDROID_RELEASE_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
   [[ "$expected" =~ ^[0-9a-f]{64}$ && "$actual" == "$expected" ]] || { echo "Unexpected APK signing certificate" >&2; exit 1; }
 fi
 badging="$("$tools/aapt" dump badging "$apk")"
-metadata="$(printf '%s\n' "$badging" | head -n 1)"
+metadata="${badging%%
+[[ "$metadata" == *"name='dev.diaspro.diaspro_markdown_mobile'"* && "$metadata" == *"versionCode='$build'"* && "$metadata" == *"versionName='$version'"* ]] || { echo "Unexpected APK metadata: $metadata" >&2; exit 1; }
+printf '%s\n' "$metadata"
+\n'*}"
 [[ "$metadata" == *"name='dev.diaspro.diaspro_markdown_mobile'"* && "$metadata" == *"versionCode='$build'"* && "$metadata" == *"versionName='$version'"* ]] || { echo "Unexpected APK metadata: $metadata" >&2; exit 1; }
 printf '%s\n' "$metadata"

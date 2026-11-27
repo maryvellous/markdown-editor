@@ -13,6 +13,11 @@ on:
       - "mobile/**"
       - ".github/workflows/build-mobile-android.yml"
   workflow_dispatch:
+    inputs:
+      sign_candidate:
+        description: 'Sign a test candidate with the approved release key (main only; no publication)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,6 +70,10 @@ jobs:
             exit 1
           fi
 
+      - name: Reject signed candidate outside main
+        if: github.event_name == 'workflow_dispatch' && inputs.sign_candidate && github.ref != 'refs/heads/main'
+        run: exit 1
+
       - name: Bootstrap Android project
         run: bash ./mobile/tool/bootstrap-android.sh
 
@@ -92,12 +101,13 @@ jobs:
         run: |
           cp .mobile-build/build/app/outputs/flutter-apk/app-release.apk "${{ steps.meta.outputs.apk }}"
 
-      - name: Sign tagged releases and verify APK identity
+      - name: Sign approved candidates and verify APK identity
         env:
-          ANDROID_RELEASE_KEYSTORE_B64: ${{ startsWith(github.ref, 'refs/tags/mobile-v') && secrets.ANDROID_RELEASE_KEYSTORE_B64 || '' }}
-          ANDROID_RELEASE_STORE_PASSWORD: ${{ startsWith(github.ref, 'refs/tags/mobile-v') && secrets.ANDROID_RELEASE_STORE_PASSWORD || '' }}
-          ANDROID_RELEASE_KEY_PASSWORD: ${{ startsWith(github.ref, 'refs/tags/mobile-v') && secrets.ANDROID_RELEASE_KEY_PASSWORD || '' }}
-          ANDROID_RELEASE_KEY_ALIAS: ${{ startsWith(github.ref, 'refs/tags/mobile-v') && secrets.ANDROID_RELEASE_KEY_ALIAS || '' }}
+          SIGN_RELEASE_APK: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) }}
+          ANDROID_RELEASE_KEYSTORE_B64: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_KEYSTORE_B64 || '' }}
+          ANDROID_RELEASE_STORE_PASSWORD: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_STORE_PASSWORD || '' }}
+          ANDROID_RELEASE_KEY_PASSWORD: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_KEY_PASSWORD || '' }}
+          ANDROID_RELEASE_KEY_ALIAS: ${{ (startsWith(github.ref, 'refs/tags/mobile-v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign_candidate)) && secrets.ANDROID_RELEASE_KEY_ALIAS || '' }}
           ANDROID_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
         run: bash mobile/tool/verify-release-apk.sh "${{ steps.meta.outputs.apk }}" "${{ steps.meta.outputs.version }}" "${{ steps.meta.outputs.build }}"
 
