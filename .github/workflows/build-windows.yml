@@ -29,6 +29,14 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           "version=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Parse owner-local signing helper
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path "mobile/tool/setup-release-signing.ps1").Path, [ref]$tokens, [ref]$errors)
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; throw "Signing helper syntax errors" }
+
       - name: Setup Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:

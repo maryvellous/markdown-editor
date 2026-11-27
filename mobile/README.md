@@ -13,7 +13,8 @@ Versione Android in Flutter/Dart di Diaspro Markdown, mantenuta nello stesso rep
 - modalità **Scrivi** e **Leggi** su telefono;
 - modalità **Affianca** automatica disponibile su tablet / finestre larghe;
 - guida Markdown inseribile nel punto del cursore;
-- rendering Markdown nativo Flutter con `flutter_markdown_plus`;
+- rendering Markdown Flutter con `flutter_markdown_plus`, diagrammi Mermaid e viewer a schermo intero con zoom, trascinamento e reset;
+- Annulla/Ripristina e contatori di parole e caratteri;
 - avviso prima di uscire o cambiare documento quando ci sono modifiche non salvate;
 - icona launcher Diaspro dedicata, con adaptive icon e themed icon sui dispositivi Android compatibili;
 - palette e identità visuale Diaspro.
@@ -26,7 +27,7 @@ La cartella Gradle/Android standard non è versionata: la CI la genera con la ve
 
 ## Build locale
 
-Con Flutter 3.47+ installato:
+Con Flutter 3.47.0 (versione fissata in CI) e JDK 17 installati:
 
 ```bash
 bash ./mobile/tool/bootstrap-android.sh
@@ -48,4 +49,4 @@ La GitHub Action **Build Android APK** esegue bootstrap, analisi, test, build AP
 
 Le build CI di PR/main sono artefatti di test, non aggiornamenti pubblici. Un tag esplicito `mobile-v<versione>` abilita la firma con una chiave stabile approvata e la pubblicazione solo se la verifica del certificato riesce. Senza configurazione della chiave, la release fallisce intenzionalmente.
 
-Prima della prima release con firma stabile, confrontare il certificato dell'APK già distribuito; un cambio di chiave può impedire aggiornamenti in-place. Vedere [release engineering](../docs/release-engineering.md).
+Prima della prima release con firma stabile, confrontare il certificato dell'APK già distribuito; un cambio di chiave può impedire aggiornamenti in-place. Vedere [configurazione firma](../docs/android-signing-setup.md), [release engineering](../docs/release-engineering.md) e [collaudo](../docs/release-validation.md). La prossima versione in preparazione è 1.1.2+5; non è ancora pubblicata.
